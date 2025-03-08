@@ -37,19 +37,35 @@ func TestScanBasics(t *testing.T) {
 			},
 		},
 		{
-			name: "hash",
-			src:  "#",
+			name: "hash comment",
+			src:  "# A comment",
 			want: []token.Token{
-				{Kind: token.Hash, Start: 0, End: 1},
-				{Kind: token.EOF, Start: 1, End: 1},
+				{Kind: token.Comment, Start: 0, End: 11},
+				{Kind: token.EOF, Start: 11, End: 11},
 			},
 		},
 		{
-			name: "slash",
-			src:  "/",
+			name: "slash comment",
+			src:  "// A comment",
 			want: []token.Token{
-				{Kind: token.Slash, Start: 0, End: 1},
-				{Kind: token.EOF, Start: 1, End: 1},
+				{Kind: token.Comment, Start: 0, End: 12},
+				{Kind: token.EOF, Start: 12, End: 12},
+			},
+		},
+		{
+			name: "hash comment with line tail",
+			src:  "# A comment\n",
+			want: []token.Token{
+				{Kind: token.Comment, Start: 0, End: 12},
+				{Kind: token.EOF, Start: 12, End: 12},
+			},
+		},
+		{
+			name: "slash comment with line tail",
+			src:  "// A comment\n",
+			want: []token.Token{
+				{Kind: token.Comment, Start: 0, End: 13},
+				{Kind: token.EOF, Start: 13, End: 13},
 			},
 		},
 		{

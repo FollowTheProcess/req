@@ -10,23 +10,22 @@ func _() {
 	var x [1]struct{}
 	_ = x[EOF-0]
 	_ = x[Error-1]
-	_ = x[Hash-2]
-	_ = x[Slash-3]
-	_ = x[Text-4]
-	_ = x[MethodGet-5]
-	_ = x[MethodHead-6]
-	_ = x[MethodPost-7]
-	_ = x[MethodPut-8]
-	_ = x[MethodDelete-9]
-	_ = x[MethodConnect-10]
-	_ = x[MethodPatch-11]
-	_ = x[MethodOptions-12]
-	_ = x[MethodTrace-13]
+	_ = x[Comment-2]
+	_ = x[Text-3]
+	_ = x[MethodGet-4]
+	_ = x[MethodHead-5]
+	_ = x[MethodPost-6]
+	_ = x[MethodPut-7]
+	_ = x[MethodDelete-8]
+	_ = x[MethodConnect-9]
+	_ = x[MethodPatch-10]
+	_ = x[MethodOptions-11]
+	_ = x[MethodTrace-12]
 }
 
-const _Kind_name = "EOFErrorHashSlashTextMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnecrtMethodPatchMethodOptionsMethodTrace"
+const _Kind_name = "EOFErrorCommentTextMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTrace"
 
-var _Kind_index = [...]uint8{0, 3, 8, 12, 17, 21, 30, 40, 50, 59, 71, 85, 96, 109, 120}
+var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 28, 38, 48, 57, 69, 82, 93, 106, 117}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {
