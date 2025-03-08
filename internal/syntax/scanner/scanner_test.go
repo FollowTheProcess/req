@@ -52,7 +52,7 @@ func TestScan(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := strings.NewReader(tt.src)
-			scanner, err := scanner.New(tt.name, r)
+			scanner, err := scanner.New(tt.name, r, testFailHandler(t))
 			test.Ok(t, err)
 
 			var tokens []token.Token
@@ -184,4 +184,13 @@ func FuzzPositionString(f *testing.F) {
 		want := fmt.Sprintf("%s:%d:%d-%d", name, line, startCol, endCol)
 		test.Equal(t, got, want)
 	})
+}
+
+// testFailHandler returns a [scanner.ErrorHandler] that handles scanning errors by failing
+// the enclosing test.
+func testFailHandler(tb testing.TB) scanner.ErrorHandler {
+	tb.Helper()
+	return func(pos scanner.Position, msg string) {
+		tb.Fatalf("%s: %s", pos, msg)
+	}
 }
