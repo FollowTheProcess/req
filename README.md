@@ -15,10 +15,56 @@ Execute `.http` files from the command line
 
 ## Project Description
 
-`req` is a command line toolkit to work with `.http` files as per the <https://github.com/JetBrains/http-request-in-editor-spec> specification. See <https://www.jetbrains.com/help/idea/exploring-http-syntax.html> for an overview of the syntax.
+`req` is a command line toolkit to work with `.http` files as per the <https://github.com/JetBrains/http-request-in-editor-spec> specification. See <https://www.jetbrains.com/help/idea/exploring-http-syntax.html> for an overview of the syntax but the **TL;DR** is:
+
+```plaintext
+// Comments can begin with slashes '/' or hashes '#' and last until the next newline character '\n'
+# This is also a comment (I'll use '/' from now on but you are free to use both)
+
+// Global variables (e.g. base url) can be defined with '@ident = <value>'
+@base = https://api.company.com
+
+// 3 '#' in a row mark a new HTTP request, with an optional name e.g. 'Delete employee 1'
+### [name]
+HTTP_METHOD <url>
+Header-Name: <header value>
+
+// You can also give them names like this
+###
+# @name <name>
+# @name=<name>
+# @name = <name>
+HTTP_METHOD <url>
+...
+
+// Global variables are interpolated like this
+### Get employee 1
+GET {{base}}/employees/1
+
+// Pass the body of requests like this
+### Update employee 1 name
+PATCH {{base}}/employees/1
+Content-Type: application/json
+
+{
+  "name": "Namey McNamerson"
+}
+```
 
 > [!NOTE]
 > The custom javascript portions (e.g. the `{% ... %}` blocks) of the spec are **not** implemented as these are editor specific and require a javascript runtime.
+
+## Installation
+
+Compiled binaries for all supported platforms can be found in the [GitHub release]. There is also a [homebrew] tap:
+
+```shell
+brew install FollowTheProcess/tap/req
+```
+
+## Quickstart
+
+Given a `.http` file containing http requests like this:
 
 ```plaintext
 // demo.http
@@ -52,21 +98,11 @@ Content-Type: application/json
 DELETE {{base}}/todoitems/1
 ```
 
-Invoke any of these requests with:
+You can invoke any one of them, like this...
 
 ```shell
 req do ./demo.http --request "Get All items"
 ```
-
-## Installation
-
-Compiled binaries for all supported platforms can be found in the [GitHub release]. There is also a [homebrew] tap:
-
-```shell
-brew install FollowTheProcess/tap/req
-```
-
-## Quickstart
 
 ### Credits
 
