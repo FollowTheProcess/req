@@ -83,9 +83,13 @@ tasks:
 
       - sh: command -v typos
         msg: requires typos-cli, run `brew install typos-cli`
+
+      - sh: command -v nilaway
+        msg: requires nilaway, see https://github.com/uber-go/nilaway
     cmds:
       - golangci-lint run --fix
       - typos
+      - nilaway ./...
 
   cov:
     desc: Calculate test coverage and render the html
