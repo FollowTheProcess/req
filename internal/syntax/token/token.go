@@ -10,15 +10,14 @@ type Kind int
 const (
 	EOF           Kind = iota // EOF
 	Error                     // Error
-	Hash                      // Hash
-	Slash                     // Slash
+	Comment                   // Comment
 	Text                      // Text
 	MethodGet                 // MethodGet
 	MethodHead                // MethodHead
 	MethodPost                // MethodPost
 	MethodPut                 // MethodPut
 	MethodDelete              // MethodDelete
-	MethodConnect             // MethodConnecrt
+	MethodConnect             // MethodConnect
 	MethodPatch               // MethodPatch
 	MethodOptions             // MethodOptions
 	MethodTrace               // MethodTrace

@@ -66,9 +66,9 @@ func (s *Scanner) Scan() token.Token {
 	case eof:
 		return s.token(token.EOF)
 	case '#':
-		return s.token(token.Hash)
+		return s.scanComment()
 	case '/':
-		return s.token(token.Slash)
+		return s.scanComment()
 	default:
 		if unicode.IsLetter(char) {
 			return s.scanText()
@@ -99,6 +99,14 @@ func (s *Scanner) advance() {
 	// Move the scanner forward
 	s.pos += width
 	s.char = char
+}
+
+// advanceWhile advances the scanner as long as the predicate returns true, stopping at
+// the first character for which it returns false.
+func (s *Scanner) advanceWhile(predicate func(r rune) bool) {
+	for predicate(s.char) {
+		s.advance()
+	}
 }
 
 // token returns a token of a particular kind, using the scanner state
@@ -153,4 +161,29 @@ func (s *Scanner) scanText() token.Token {
 	}
 
 	return s.token(token.Text)
+}
+
+// scanComment scans either a '#' or '//' style comment.
+//
+// The '#' or first '/' has been consumed.
+func (s *Scanner) scanComment() token.Token {
+	s.advanceWhile(isLineSpace)
+
+	// Consume until the end of the line or eof
+	for s.char != '\n' && s.char != eof {
+		s.advance()
+	}
+
+	tok := s.token(token.Comment)
+
+	// Any trailing space after the comment doesn't matter
+	s.advanceWhile(unicode.IsSpace)
+
+	return tok
+}
+
+// isLineSpace reports whether r is a non line terminating whitespace. Imagine
+// [unicode.IsSpace] but without '\n' and '\r\n'.
+func isLineSpace(r rune) bool {
+	return r == ' ' || r == '\t'
 }
