@@ -183,7 +183,7 @@ func TestPositionString(t *testing.T) {
 	}
 }
 
-func FuzzPositionString(f *testing.F) {
+func FuzzPosition(f *testing.F) {
 	f.Add("", 0, 0, 0)
 	f.Add("name.txt", 1, 1, 2)
 	f.Add("valid.http", 12, 17, 19)
