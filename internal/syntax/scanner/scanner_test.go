@@ -22,20 +22,20 @@ func TestScanBasics(t *testing.T) {
 		src  string        // Source text to scan
 		want []token.Token // Expected tokens
 	}{
-		// {
-		// 	name: "empty",
-		// 	src:  "",
-		// 	want: []token.Token{
-		// 		{Kind: token.EOF, Start: 0, End: 0},
-		// 	},
-		// },
-		// {
-		// 	name: "bom",
-		// 	src:  "\ufeff",
-		// 	want: []token.Token{
-		// 		{Kind: token.EOF, Start: 3, End: 3},
-		// 	},
-		// },
+		{
+			name: "empty",
+			src:  "",
+			want: []token.Token{
+				{Kind: token.EOF, Start: 0, End: 0},
+			},
+		},
+		{
+			name: "bom",
+			src:  "\ufeff",
+			want: []token.Token{
+				{Kind: token.EOF, Start: 3, End: 3},
+			},
+		},
 		{
 			name: "hash",
 			src:  "#",

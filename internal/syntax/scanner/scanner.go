@@ -38,7 +38,7 @@ func New(name string, r io.Reader, handler ErrorHandler) (*Scanner, error) {
 		return nil, fmt.Errorf("could not read from input: %w", err)
 	}
 
-	scanner := &Scanner{
+	s := &Scanner{
 		name:    name,
 		src:     src,
 		line:    1,
@@ -47,12 +47,13 @@ func New(name string, r io.Reader, handler ErrorHandler) (*Scanner, error) {
 	}
 
 	// Read the first char, and ignore it if it's the bom
-	scanner.advance()
-	if scanner.char == bom {
-		scanner.advance()
+	s.advance()
+	if s.char == bom {
+		s.advance()
+		s.start = s.pos
 	}
 
-	return scanner, nil
+	return s, nil
 }
 
 // Scan scans the input and returns the next token.
