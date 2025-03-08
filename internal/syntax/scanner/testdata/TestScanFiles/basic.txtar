@@ -6,6 +6,6 @@ GET https://api.somewhere.com/items/1
 <Token::Hash start=1, end=2>
 <Token::Hash start=2, end=3>
 <Token::Text start=4, end=8>
-<Token::Method start=9, end=12>
+<Token::MethodGet start=9, end=12>
 <Token::Text start=13, end=46>
 <Token::EOF start=46, end=46>

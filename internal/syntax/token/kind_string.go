@@ -12,11 +12,21 @@ func _() {
 	_ = x[Error-1]
 	_ = x[Hash-2]
 	_ = x[Slash-3]
+	_ = x[Text-4]
+	_ = x[MethodGet-5]
+	_ = x[MethodHead-6]
+	_ = x[MethodPost-7]
+	_ = x[MethodPut-8]
+	_ = x[MethodDelete-9]
+	_ = x[MethodConnect-10]
+	_ = x[MethodPatch-11]
+	_ = x[MethodOptions-12]
+	_ = x[MethodTrace-13]
 }
 
-const _Kind_name = "EOFErrorHashSlash"
+const _Kind_name = "EOFErrorHashSlashTextMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnecrtMethodPatchMethodOptionsMethodTrace"
 
-var _Kind_index = [...]uint8{0, 3, 8, 12, 17}
+var _Kind_index = [...]uint8{0, 3, 8, 12, 17, 21, 30, 40, 50, 59, 71, 85, 96, 109, 120}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {

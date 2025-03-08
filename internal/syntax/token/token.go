@@ -8,20 +8,57 @@ type Kind int
 
 //go:generate stringer -type Kind -linecomment
 const (
-	EOF   Kind = iota // EOF
-	Error             // Error
-	Hash              // Hash
-	Slash             // Slash
+	EOF           Kind = iota // EOF
+	Error                     // Error
+	Hash                      // Hash
+	Slash                     // Slash
+	Text                      // Text
+	MethodGet                 // MethodGet
+	MethodHead                // MethodHead
+	MethodPost                // MethodPost
+	MethodPut                 // MethodPut
+	MethodDelete              // MethodDelete
+	MethodConnect             // MethodConnecrt
+	MethodPatch               // MethodPatch
+	MethodOptions             // MethodOptions
+	MethodTrace               // MethodTrace
 )
 
 // Token is a lexical token in a .http file.
 type Token struct {
 	Kind  Kind // The kind of token this is
-	Start int  // Byte offset from the start of the file to the first char in this token
-	End   int  // Byte offset from the start of the file to the last char in this token
+	Start int  // Byte offset from the start of the file to the start of this token
+	End   int  // Byte offset from the start of the file to the end of this token
 }
 
 // String returns a string representation of a [Token].
 func (t Token) String() string {
 	return fmt.Sprintf("<Token::%s start=%d, end=%d>", t.Kind, t.Start, t.End)
+}
+
+// Method reports whether a string refers to a HTTP method, returning it's
+// [Kind] and true if it is. Otherwise [Text] and false are returned.
+func Method(text string) (kind Kind, ok bool) {
+	switch text {
+	case "GET":
+		return MethodGet, true
+	case "HEAD":
+		return MethodHead, true
+	case "POST":
+		return MethodPost, true
+	case "PUT":
+		return MethodPut, true
+	case "DELETE":
+		return MethodDelete, true
+	case "CONNECT":
+		return MethodConnect, true
+	case "PATCH":
+		return MethodPatch, true
+	case "OPTIONS":
+		return MethodOptions, true
+	case "TRACE":
+		return MethodTrace, true
+	default:
+		return Text, false
+	}
 }
