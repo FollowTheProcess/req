@@ -26,7 +26,6 @@ Execute `.http` files from the command line
 @base = https://localhost:5167
  
 ### Create a new item
- 
 POST {{base}}/todoitems
 Content-Type: application/json
  
@@ -37,11 +36,9 @@ Content-Type: application/json
 }
  
 ### Get All items
- 
 GET {{base}}/todoitems
  
 ### Update item
- 
 PUT {{base}}/todoitems/1
 Content-Type: application/json
  
@@ -52,7 +49,6 @@ Content-Type: application/json
 }
  
 ### Delete item
- 
 DELETE {{base}}/todoitems/1
 ```
 
