@@ -4,6 +4,7 @@ package scanner
 import (
 	"fmt"
 	"io"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/FollowTheProcess/req/internal/syntax/token"
@@ -69,6 +70,9 @@ func (s *Scanner) Scan() token.Token {
 	case '/':
 		return s.token(token.Slash)
 	default:
+		if unicode.IsLetter(char) {
+			return s.scanText()
+		}
 		s.errorf("unexpected char %q", char)
 		return s.token(token.Error)
 	}
@@ -133,4 +137,20 @@ func (s *Scanner) error(msg string) {
 // errorf calls error with a formatted message.
 func (s *Scanner) errorf(format string, a ...any) {
 	s.error(fmt.Sprintf(format, a...))
+}
+
+// scanText scans a string of continuous characters, stopping at the first
+// whitespace character.
+func (s *Scanner) scanText() token.Token {
+	for !unicode.IsSpace(s.char) && s.char != eof {
+		s.advance()
+	}
+
+	text := string(s.src[s.start:s.pos])
+	kind, method := token.Method(text)
+	if method {
+		return s.token(kind)
+	}
+
+	return s.token(token.Text)
 }
