@@ -12,20 +12,21 @@ func _() {
 	_ = x[Error-1]
 	_ = x[Comment-2]
 	_ = x[Text-3]
-	_ = x[MethodGet-4]
-	_ = x[MethodHead-5]
-	_ = x[MethodPost-6]
-	_ = x[MethodPut-7]
-	_ = x[MethodDelete-8]
-	_ = x[MethodConnect-9]
-	_ = x[MethodPatch-10]
-	_ = x[MethodOptions-11]
-	_ = x[MethodTrace-12]
+	_ = x[RequestSeparator-4]
+	_ = x[MethodGet-5]
+	_ = x[MethodHead-6]
+	_ = x[MethodPost-7]
+	_ = x[MethodPut-8]
+	_ = x[MethodDelete-9]
+	_ = x[MethodConnect-10]
+	_ = x[MethodPatch-11]
+	_ = x[MethodOptions-12]
+	_ = x[MethodTrace-13]
 }
 
-const _Kind_name = "EOFErrorCommentTextMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTrace"
+const _Kind_name = "EOFErrorCommentTextRequestSeparatorMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTrace"
 
-var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 28, 38, 48, 57, 69, 82, 93, 106, 117}
+var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 35, 44, 54, 64, 73, 85, 98, 109, 122, 133}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {

@@ -8,19 +8,20 @@ type Kind int
 
 //go:generate stringer -type Kind -linecomment
 const (
-	EOF           Kind = iota // EOF
-	Error                     // Error
-	Comment                   // Comment
-	Text                      // Text
-	MethodGet                 // MethodGet
-	MethodHead                // MethodHead
-	MethodPost                // MethodPost
-	MethodPut                 // MethodPut
-	MethodDelete              // MethodDelete
-	MethodConnect             // MethodConnect
-	MethodPatch               // MethodPatch
-	MethodOptions             // MethodOptions
-	MethodTrace               // MethodTrace
+	EOF              Kind = iota // EOF
+	Error                        // Error
+	Comment                      // Comment
+	Text                         // Text
+	RequestSeparator             // RequestSeparator
+	MethodGet                    // MethodGet
+	MethodHead                   // MethodHead
+	MethodPost                   // MethodPost
+	MethodPut                    // MethodPut
+	MethodDelete                 // MethodDelete
+	MethodConnect                // MethodConnect
+	MethodPatch                  // MethodPatch
+	MethodOptions                // MethodOptions
+	MethodTrace                  // MethodTrace
 )
 
 // Token is a lexical token in a .http file.

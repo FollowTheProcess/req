@@ -66,6 +66,10 @@ func (s *Scanner) Scan() token.Token {
 	case eof:
 		return s.token(token.EOF)
 	case '#':
+		if s.char == '#' {
+			// It's a request separator
+			return s.scanRequestSeparator()
+		}
 		return s.scanComment()
 	case '/':
 		return s.scanComment()
@@ -134,7 +138,7 @@ func (s *Scanner) error(msg string) {
 
 	position := Position{
 		Name:     s.name,
-		Line:     s.line,
+		Line:     s.lineStart,
 		StartCol: startCol,
 		EndCol:   endCol,
 	}
@@ -177,6 +181,27 @@ func (s *Scanner) scanComment() token.Token {
 	tok := s.token(token.Comment)
 
 	// Any trailing space after the comment doesn't matter
+	s.advanceWhile(unicode.IsSpace)
+
+	return tok
+}
+
+// scanRequestSeparator scans the literal '###' separator.
+//
+// The first '#' has already been consumed.
+func (s *Scanner) scanRequestSeparator() token.Token {
+	for s.char == '#' {
+		s.advance()
+	}
+
+	text := string(s.src[s.start:s.pos])
+	if text != "###" {
+		s.errorf("bad request separator, expected %q got %q", "###", text)
+		return s.token(token.Error)
+	}
+
+	tok := s.token(token.RequestSeparator)
+
 	s.advanceWhile(unicode.IsSpace)
 
 	return tok
