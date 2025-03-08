@@ -156,6 +156,14 @@ func TestScanBasics(t *testing.T) {
 				{Kind: token.EOF, Start: 5, End: 5},
 			},
 		},
+		{
+			name: "request sep",
+			src:  "###",
+			want: []token.Token{
+				{Kind: token.RequestSeparator, Start: 0, End: 3},
+				{Kind: token.EOF, Start: 3, End: 3},
+			},
+		},
 	}
 
 	for _, tt := range tests {
