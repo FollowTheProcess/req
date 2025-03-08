@@ -2,7 +2,10 @@ module github.com/FollowTheProcess/req
 
 go 1.24
 
-require github.com/FollowTheProcess/test v0.20.3
+require (
+	github.com/FollowTheProcess/test v0.20.3
+	github.com/FollowTheProcess/txtar v0.7.0
+)
 
 require (
 	github.com/FollowTheProcess/hue v0.5.1 // indirect

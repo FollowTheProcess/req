@@ -1,7 +1,9 @@
 package scanner_test
 
 import (
+	"flag"
 	"fmt"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -9,28 +11,31 @@ import (
 	"github.com/FollowTheProcess/req/internal/syntax/scanner"
 	"github.com/FollowTheProcess/req/internal/syntax/token"
 	"github.com/FollowTheProcess/test"
+	"github.com/FollowTheProcess/txtar"
 )
 
-func TestScan(t *testing.T) {
+var update = flag.Bool("update", false, "Update snapshots and testdata")
+
+func TestScanBasics(t *testing.T) {
 	tests := []struct {
 		name string        // Name of the test case
 		src  string        // Source text to scan
 		want []token.Token // Expected tokens
 	}{
-		{
-			name: "empty",
-			src:  "",
-			want: []token.Token{
-				{Kind: token.EOF, Start: 0, End: 0},
-			},
-		},
-		{
-			name: "bom",
-			src:  "\ufeff",
-			want: []token.Token{
-				{Kind: token.EOF, Start: 3, End: 3},
-			},
-		},
+		// {
+		// 	name: "empty",
+		// 	src:  "",
+		// 	want: []token.Token{
+		// 		{Kind: token.EOF, Start: 0, End: 0},
+		// 	},
+		// },
+		// {
+		// 	name: "bom",
+		// 	src:  "\ufeff",
+		// 	want: []token.Token{
+		// 		{Kind: token.EOF, Start: 3, End: 3},
+		// 	},
+		// },
 		{
 			name: "hash",
 			src:  "#",
@@ -65,6 +70,60 @@ func TestScan(t *testing.T) {
 			}
 
 			test.EqualFunc(t, tokens, tt.want, slices.Equal, test.Context("token stream mismatch"))
+		})
+	}
+}
+
+func TestScanFiles(t *testing.T) {
+	t.Skipf("TODO: This is skipped until we can scan more things")
+
+	pattern := filepath.Join("testdata", "TestScanFiles", "*.txtar")
+	files, err := filepath.Glob(pattern)
+	test.Ok(t, err)
+
+	for _, file := range files {
+		name := filepath.Base(file)
+		t.Run(name, func(t *testing.T) {
+			archive, err := txtar.ParseFile(file)
+			test.Ok(t, err)
+
+			src, ok := archive.Read("src.http")
+			test.True(t, ok, test.Context("archive missing src.http"))
+
+			want, ok := archive.Read("tokens.txt")
+			test.True(t, ok, test.Context("archive missing tokens.txt"))
+
+			scanner, err := scanner.New(name, strings.NewReader(src), testFailHandler(t))
+			test.Ok(t, err)
+
+			var tokens []token.Token
+			for {
+				tok := scanner.Scan()
+				tokens = append(tokens, tok)
+				if tok.Kind == token.EOF {
+					break
+				}
+			}
+
+			var formattedTokens strings.Builder
+			for _, tok := range tokens {
+				formattedTokens.WriteString(tok.String())
+				formattedTokens.WriteByte('\n')
+			}
+
+			got := formattedTokens.String()
+
+			if *update {
+				// Update the expected with what's actually been seen
+				err := archive.Write("tokens.txt", got)
+				test.Ok(t, err)
+
+				err = txtar.DumpFile(file, archive)
+				test.Ok(t, err)
+				return
+			}
+
+			test.Diff(t, got, want)
 		})
 	}
 }

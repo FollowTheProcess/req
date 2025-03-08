@@ -25,7 +25,6 @@ type Scanner struct {
 	src       []byte       // Raw source text
 	start     int          // The start position of the current token
 	pos       int          // Current scanner position in src (bytes, 0 indexed)
-	nextPos   int          // Position of next character
 	line      int          // Current line number (1 indexed)
 	lineStart int          // Offset at which the current line began
 	char      rune         // The character the scanner is currently sat on
@@ -44,6 +43,7 @@ func New(name string, r io.Reader, handler ErrorHandler) (*Scanner, error) {
 		src:     src,
 		line:    1,
 		handler: handler,
+		char:    ' ',
 	}
 
 	// Read the first char, and ignore it if it's the bom
@@ -57,8 +57,7 @@ func New(name string, r io.Reader, handler ErrorHandler) (*Scanner, error) {
 
 // Scan scans the input and returns the next token.
 func (s *Scanner) Scan() token.Token {
-	s.start = s.pos // Start position of current token
-	char := s.char  // The current char before advancing
+	char := s.char // The current char before advancing
 	s.advance()
 
 	switch char {
@@ -76,7 +75,7 @@ func (s *Scanner) Scan() token.Token {
 
 // advance advances the scanner by a single character.
 func (s *Scanner) advance() {
-	if s.nextPos >= len(s.src) {
+	if s.pos >= len(s.src) {
 		s.char = eof
 		s.pos = len(s.src)
 		return
@@ -87,21 +86,24 @@ func (s *Scanner) advance() {
 		s.errorf("invalid utf8 char: %U", char)
 	}
 
-	// Move the scanner forward
-	s.pos = s.nextPos
-	s.nextPos += width
-	s.char = char
-
 	if char == '\n' {
 		s.line++
 		s.lineStart = s.pos
 	}
+
+	// Move the scanner forward
+	s.pos += width
+	s.char = char
 }
 
 // token returns a token of a particular kind, using the scanner state
 // to fill in position info.
 func (s *Scanner) token(kind token.Kind) token.Token {
-	return token.Token{Kind: kind, Start: s.start, End: s.pos}
+	tok := token.Token{Kind: kind, Start: s.start, End: s.pos}
+
+	// Bring start up to pos
+	s.start = s.pos
+	return tok
 }
 
 // error calls the installed error handler using information from the state
