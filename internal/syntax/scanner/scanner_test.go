@@ -33,7 +33,7 @@ func TestScanBasics(t *testing.T) {
 			name: "hash comment",
 			src:  "# A comment",
 			want: []token.Token{
-				{Kind: token.Comment, Start: 0, End: 11},
+				{Kind: token.Comment, Start: 2, End: 11},
 				{Kind: token.EOF, Start: 11, End: 11},
 			},
 		},
@@ -41,7 +41,7 @@ func TestScanBasics(t *testing.T) {
 			name: "slash comment",
 			src:  "// A comment",
 			want: []token.Token{
-				{Kind: token.Comment, Start: 0, End: 12},
+				{Kind: token.Comment, Start: 3, End: 12},
 				{Kind: token.EOF, Start: 12, End: 12},
 			},
 		},
@@ -49,7 +49,7 @@ func TestScanBasics(t *testing.T) {
 			name: "hash comment with line tail",
 			src:  "# A comment\n",
 			want: []token.Token{
-				{Kind: token.Comment, Start: 0, End: 11},
+				{Kind: token.Comment, Start: 2, End: 11},
 				// There's a "hidden" (ignored) newline here, hence why EOF starts at 12
 				{Kind: token.EOF, Start: 12, End: 12},
 			},
@@ -58,7 +58,7 @@ func TestScanBasics(t *testing.T) {
 			name: "slash comment with line tail",
 			src:  "// A comment\n",
 			want: []token.Token{
-				{Kind: token.Comment, Start: 0, End: 12},
+				{Kind: token.Comment, Start: 3, End: 12},
 				// There's a "hidden" (ignored) newline here, hence why EOF starts at 13
 				{Kind: token.EOF, Start: 13, End: 13},
 			},
@@ -159,6 +159,33 @@ func TestScanBasics(t *testing.T) {
 				{Kind: token.EOF, Start: 3, End: 3},
 			},
 		},
+		{
+			name: "request sep with line tail",
+			src:  "###\n",
+			want: []token.Token{
+				{Kind: token.RequestSeparator, Start: 0, End: 3},
+				{Kind: token.EOF, Start: 4, End: 4},
+			},
+		},
+		{
+			name: "request sep with name",
+			src:  "### My Request",
+			want: []token.Token{
+				{Kind: token.RequestSeparator, Start: 0, End: 3},
+				{Kind: token.Text, Start: 4, End: 14}, // <- The name
+				{Kind: token.EOF, Start: 14, End: 14},
+			},
+		},
+		{
+			name: "request sep with name and line tail",
+			src:  "### My Request\n",
+			want: []token.Token{
+				{Kind: token.RequestSeparator, Start: 0, End: 3},
+				{Kind: token.Text, Start: 4, End: 14}, // <- The name
+				// Ignored '\n' so no token but position increases by 1
+				{Kind: token.EOF, Start: 15, End: 15},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -182,7 +209,7 @@ func TestScanBasics(t *testing.T) {
 }
 
 func TestScanFiles(t *testing.T) {
-	t.Skipf("TODO: This is skipped until we can scan more things, particularly whitespace significance")
+	// t.Skipf("TODO: This is skipped until we can scan more things, particularly whitespace significance")
 
 	pattern := filepath.Join("testdata", "TestScanFiles", "*.txtar")
 	files, err := filepath.Glob(pattern)

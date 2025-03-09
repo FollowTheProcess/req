@@ -6,4 +6,4 @@ GET https://api.somewhere.com/items/1
 <Token::Text start=4, end=8>
 <Token::MethodGet start=9, end=12>
 <Token::Text start=13, end=46>
-<Token::EOF start=46, end=46>
+<Token::EOF start=47, end=47>
