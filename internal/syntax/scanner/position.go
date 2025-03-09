@@ -2,6 +2,8 @@ package scanner
 
 import "fmt"
 
+// TODO(@FollowTheProcess): Move this and ErrorHandler to the top level syntax package so it can be used across everything
+
 // Position is an arbitrary source file position including file, line
 // and column information. It can also express a range of source via StartCol
 // and EndCol, this is useful for error reporting.
