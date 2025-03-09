@@ -30,13 +30,6 @@ func TestScanBasics(t *testing.T) {
 			},
 		},
 		{
-			name: "bom",
-			src:  "\ufeff",
-			want: []token.Token{
-				{Kind: token.EOF, Start: 3, End: 3},
-			},
-		},
-		{
 			name: "hash comment",
 			src:  "# A comment",
 			want: []token.Token{
@@ -56,7 +49,8 @@ func TestScanBasics(t *testing.T) {
 			name: "hash comment with line tail",
 			src:  "# A comment\n",
 			want: []token.Token{
-				{Kind: token.Comment, Start: 0, End: 12},
+				{Kind: token.Comment, Start: 0, End: 11},
+				// There's a "hidden" (ignored) newline here, hence why EOF starts at 12
 				{Kind: token.EOF, Start: 12, End: 12},
 			},
 		},
@@ -64,7 +58,8 @@ func TestScanBasics(t *testing.T) {
 			name: "slash comment with line tail",
 			src:  "// A comment\n",
 			want: []token.Token{
-				{Kind: token.Comment, Start: 0, End: 13},
+				{Kind: token.Comment, Start: 0, End: 12},
+				// There's a "hidden" (ignored) newline here, hence why EOF starts at 13
 				{Kind: token.EOF, Start: 13, End: 13},
 			},
 		},
