@@ -119,13 +119,16 @@ func (s *Scanner) char() rune {
 	return char
 }
 
-// skip consumes any characters for which the predicate returns true, stopping at the
+// skip ignores any characters for which the predicate returns true, stopping at the
 // first one that returns false such that after it returns, s.advance returns the
 // first 'false' char.
+//
+// The scanner start position is brought up to the current position before returning.
 func (s *Scanner) skip(predicate func(r rune) bool) {
 	for predicate(s.char()) {
 		s.advance()
 	}
+	s.start = s.pos
 }
 
 // emit passes a token over the tokens channel, using the scanner's internal
@@ -257,8 +260,16 @@ func scanText(s *Scanner) scanFn {
 	}
 
 	text := string(s.src[s.start:s.pos])
-	kind, _ := token.Method(text)
-	s.emit(kind) // Method returns either the Method or Text so safe to emit either
+	kind, method := token.Method(text)
+	if method {
+		// GET <space> <url>
+		s.emit(kind)
+		s.skip(isLineSpace)
+		return scanStart
+	}
+
+	s.emit(kind)
+	s.skip(unicode.IsSpace)
 	return scanStart
 }
 
@@ -266,6 +277,9 @@ func scanText(s *Scanner) scanFn {
 // have been consumed yet but by the time this is called we know that:
 //   - s.char() == '#'
 //   - s.peek() == '#'
+//
+// A request separator may either be followed by a '\n' or
+// a line of arbitrary text which is the name of the request.
 func scanRequestSep(s *Scanner) scanFn {
 	// Absorb no more than 3 '#'
 	count := 0
@@ -279,6 +293,22 @@ func scanRequestSep(s *Scanner) scanFn {
 	}
 
 	s.emit(token.RequestSeparator)
+
+	if unicode.IsLetter(s.peek()) {
+		s.skip(unicode.IsSpace)
+
+		// Scan the request name which is any char up until
+		// the next '\n' or eof.
+		for s.char() != '\n' && s.char() != eof {
+			s.advance()
+		}
+
+		s.emit(token.Text)
+		s.skip(unicode.IsSpace)
+		return scanStart
+	}
+
+	s.skip(unicode.IsSpace)
 	return scanStart
 }
 
