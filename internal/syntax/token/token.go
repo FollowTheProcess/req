@@ -12,7 +12,10 @@ const (
 	Error                        // Error
 	Comment                      // Comment
 	Text                         // Text
+	Ident                        // Ident
 	RequestSeparator             // RequestSeparator
+	At                           // At
+	Eq                           // Eq
 	MethodGet                    // MethodGet
 	MethodHead                   // MethodHead
 	MethodPost                   // MethodPost

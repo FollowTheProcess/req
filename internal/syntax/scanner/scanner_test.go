@@ -186,6 +186,42 @@ func TestScanBasics(t *testing.T) {
 				{Kind: token.EOF, Start: 15, End: 15},
 			},
 		},
+		{
+			name: "at",
+			src:  "@",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.EOF, Start: 1, End: 1},
+			},
+		},
+		{
+			name: "eq",
+			src:  "=",
+			want: []token.Token{
+				{Kind: token.Eq, Start: 0, End: 1},
+				{Kind: token.EOF, Start: 1, End: 1},
+			},
+		},
+		{
+			name: "at with ident",
+			src:  "@timeout",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 8},
+				{Kind: token.EOF, Start: 8, End: 8},
+			},
+		},
+		{
+			name: "at ident equal value",
+			src:  "@timeout=value",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 8},
+				{Kind: token.Eq, Start: 8, End: 9},
+				{Kind: token.Text, Start: 9, End: 14},
+				{Kind: token.EOF, Start: 14, End: 14},
+			},
+		},
 	}
 
 	for _, tt := range tests {

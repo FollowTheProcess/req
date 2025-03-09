@@ -196,6 +196,10 @@ func scanStart(s *Scanner) scanFn {
 		return scanHash
 	case '/':
 		return scanSlash
+	case '@':
+		return scanAt
+	case '=':
+		return scanEq
 	default:
 		if unicode.IsLetter(char) {
 			return scanText
@@ -295,20 +299,54 @@ func scanRequestSep(s *Scanner) scanFn {
 	s.emit(token.RequestSeparator)
 
 	if unicode.IsLetter(s.peek()) {
-		s.skip(unicode.IsSpace)
-
-		// Scan the request name which is any char up until
-		// the next '\n' or eof.
-		for s.char() != '\n' && s.char() != eof {
-			s.advance()
-		}
-
-		s.emit(token.Text)
-		s.skip(unicode.IsSpace)
-		return scanStart
+		return scanRequestName
 	}
 
 	s.skip(unicode.IsSpace)
+	return scanStart
+}
+
+// scanRequestName scans the name of a request after the separator '###'.
+func scanRequestName(s *Scanner) scanFn {
+	s.skip(unicode.IsSpace)
+
+	// Scan the request name which is any char up until
+	// the next '\n' or eof.
+	for s.char() != '\n' && s.char() != eof {
+		s.advance()
+	}
+
+	s.emit(token.Text)
+	s.skip(unicode.IsSpace)
+	return scanStart
+}
+
+// scanAt scans a '@' character.
+func scanAt(s *Scanner) scanFn {
+	s.advance() // Consume the '@'
+	s.emit(token.At)
+
+	if isAlpha(s.char()) {
+		return scanIdent
+	}
+
+	return scanStart
+}
+
+// scanIdent scans an identifier.
+func scanIdent(s *Scanner) scanFn {
+	for isIdent(s.char()) {
+		s.advance()
+	}
+
+	s.emit(token.Ident)
+	return scanStart
+}
+
+// scanEq scans a '=' character.
+func scanEq(s *Scanner) scanFn {
+	s.advance() // Consume the '='
+	s.emit(token.Eq)
 	return scanStart
 }
 
@@ -316,4 +354,14 @@ func scanRequestSep(s *Scanner) scanFn {
 // imagine [unicode.IsSpace] but without '\n' or '\r'.
 func isLineSpace(r rune) bool {
 	return r == ' ' || r == '\t'
+}
+
+// isAlpha reports whether r is an alpha character.
+func isAlpha(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+}
+
+// isIdent reports whether r is a valid identifier character.
+func isIdent(r rune) bool {
+	return isAlpha(r) || (r >= '0' && r <= '9') || r == '_' || r == '-'
 }
