@@ -4,6 +4,8 @@ package scanner
 import (
 	"fmt"
 	"io"
+	"sync"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/FollowTheProcess/req/internal/syntax/token"
@@ -31,6 +33,7 @@ type Scanner struct {
 	line      int              // Current line number (1 indexed)
 	lineStart int              // Offset at which the current line started
 	width     int              // Width of the last rune read from input, so we can backup
+	wg        sync.WaitGroup   // handler gets run in a goroutine so it doesn't block the main state machine
 }
 
 // New returns a new [Scanner] that reads from r.
@@ -54,6 +57,8 @@ func New(name string, r io.Reader, handler ErrorHandler) (*Scanner, error) {
 		width:   0,
 	}
 
+	// run terminates when the scanning state machine is finished and all the tokens
+	// drained from s.tokens so no wg.Add needed here
 	go s.run()
 	return s, nil
 }
@@ -64,9 +69,8 @@ func (s *Scanner) Scan() token.Token {
 }
 
 // advance returns, and consumes, the next character in the input or [eof].
-func (s *Scanner) advance() rune {
+func (s *Scanner) advance() rune { //nolint: unparam // We will use this, just not yet
 	if s.pos >= len(s.src) {
-		s.pos = len(s.src)
 		return eof
 	}
 
@@ -82,6 +86,7 @@ func (s *Scanner) advance() rune {
 	s.pos += width
 	if char == '\n' {
 		s.line++
+		s.lineStart = s.pos
 	}
 
 	return char
@@ -93,15 +98,16 @@ func (s *Scanner) peek() rune {
 		return eof
 	}
 
-	char, _ := utf8.DecodeRune(s.src[s.pos:])
-	if char == utf8.RuneError {
-		s.errorf("invalid utf8 char: %U", char)
-		// Advance to the end to prevent cascade errors
-		s.pos = len(s.src)
+	_, width := utf8.DecodeRune(s.src[s.pos:])
+
+	peekPos := s.pos + width
+	if peekPos >= len(s.src) {
 		return eof
 	}
 
-	return char
+	peekChar, _ := utf8.DecodeRune(s.src[peekPos:])
+
+	return peekChar
 }
 
 // char returns the character the scanner is currently sat on or [eof].
@@ -109,7 +115,17 @@ func (s *Scanner) char() rune {
 	if s.pos >= len(s.src) {
 		return eof
 	}
-	return rune(s.src[s.pos])
+	char, _ := utf8.DecodeRune(s.src[s.pos:])
+	return char
+}
+
+// skip consumes any characters for which the predicate returns true, stopping at the
+// first one that returns false such that after it returns, s.advance returns the
+// first 'false' char.
+func (s *Scanner) skip(predicate func(r rune) bool) {
+	for predicate(s.char()) {
+		s.advance()
+	}
 }
 
 // emit passes a token over the tokens channel, using the scanner's internal
@@ -130,23 +146,14 @@ func (s *Scanner) run() {
 	for state := scanStart; state != nil; {
 		state = state(s)
 	}
+	s.tokens <- token.Token{Kind: token.EOF, Start: s.pos, End: s.pos}
 	close(s.tokens)
+
+	s.wg.Wait() // Ensure we wait for error handlers to finish
 }
 
-// scanStart is the initial state of the scanner.
-func scanStart(s *Scanner) scanFn {
-	switch s.advance() {
-	case eof:
-		s.emit(token.EOF)
-		return nil // Break the state machine
-	default:
-		s.errorf("unexpected token %q", string(s.char()))
-		return nil
-	}
-}
-
-// error calls the installed error handler using information from the state
-// of the scanner to populate the error message.
+// error calculates the position information and arranges for s.handler to be called
+// with the information.
 func (s *Scanner) error(msg string) {
 	if s.handler == nil {
 		// I guess just ignore the error?
@@ -160,15 +167,123 @@ func (s *Scanner) error(msg string) {
 
 	position := Position{
 		Name:     s.name,
-		Line:     s.lineStart,
+		Line:     s.line,
 		StartCol: startCol,
 		EndCol:   endCol,
 	}
 
-	s.handler(position, msg)
+	s.wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		s.handler(position, msg)
+	}(&s.wg)
 }
 
 // errorf calls error with a formatted message.
 func (s *Scanner) errorf(format string, a ...any) {
 	s.error(fmt.Sprintf(format, a...))
+}
+
+// scanStart is the initial state of the scanner.
+func scanStart(s *Scanner) scanFn {
+	switch char := s.char(); char {
+	case eof:
+		return nil // Break the state machine
+	case '#':
+		return scanHash
+	case '/':
+		return scanSlash
+	default:
+		if unicode.IsLetter(char) {
+			return scanText
+		}
+		s.emit(token.Error)
+		s.errorf("unexpected token %q", string(s.char()))
+		return nil
+	}
+}
+
+// scanHash scans a '#' character.
+func scanHash(s *Scanner) scanFn {
+	if s.peek() == '#' {
+		return scanRequestSep
+	}
+
+	s.advance() // Consume the '#'
+
+	// Ignore any (non line terminating) whitespace between the
+	// '#' and the comment text
+	s.skip(isLineSpace)
+
+	// Now absorb any text until the the end of the line or eof
+	for s.char() != '\n' && s.char() != eof {
+		s.advance()
+	}
+
+	s.emit(token.Comment)
+	s.skip(unicode.IsSpace) // Whitespace after a comment doesn't matter
+	return scanStart
+}
+
+// scanSlash scans a '/' character.
+func scanSlash(s *Scanner) scanFn {
+	if s.peek() != '/' {
+		return scanStart
+	}
+
+	// It's a '//' style comment, consume both '//'
+	s.advance()
+	s.advance()
+
+	// Ignore any (non line terminating) whitespace between the
+	// '//' and the comment text
+	s.skip(isLineSpace)
+
+	// Now absorb any text until the the end of the line or eof
+	for s.char() != '\n' && s.char() != eof {
+		s.advance()
+	}
+
+	s.emit(token.Comment)
+	s.skip(unicode.IsSpace) // Whitespace after a comment doesn't matter
+	return scanStart
+}
+
+// scanText scans a string of continuous characters, stopping at the first
+// whitespace character.
+func scanText(s *Scanner) scanFn {
+	for !unicode.IsSpace(s.char()) && s.char() != eof {
+		s.advance()
+	}
+
+	text := string(s.src[s.start:s.pos])
+	kind, _ := token.Method(text)
+	s.emit(kind) // Method returns either the Method or Text so safe to emit either
+	return scanStart
+}
+
+// scanRequestSep scans the literal '###' request separator. No '#'
+// have been consumed yet but by the time this is called we know that:
+//   - s.char() == '#'
+//   - s.peek() == '#'
+func scanRequestSep(s *Scanner) scanFn {
+	// Absorb no more than 3 '#'
+	count := 0
+	const sepLength = 3 // len("###")
+	for s.char() == '#' {
+		count++
+		s.advance()
+		if count == sepLength {
+			break
+		}
+	}
+
+	s.emit(token.RequestSeparator)
+	return scanStart
+}
+
+// isLineSpace reports whether r is a non line terminating whitespace character,
+// imagine [unicode.IsSpace] but without '\n' or '\r'.
+func isLineSpace(r rune) bool {
+	return r == ' ' || r == '\t'
 }

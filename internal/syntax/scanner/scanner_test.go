@@ -29,134 +29,136 @@ func TestScanBasics(t *testing.T) {
 				{Kind: token.EOF, Start: 0, End: 0},
 			},
 		},
-		// {
-		// 	name: "hash comment",
-		// 	src:  "# A comment",
-		// 	want: []token.Token{
-		// 		{Kind: token.Comment, Start: 0, End: 11},
-		// 		{Kind: token.EOF, Start: 11, End: 11},
-		// 	},
-		// },
-		// {
-		// 	name: "slash comment",
-		// 	src:  "// A comment",
-		// 	want: []token.Token{
-		// 		{Kind: token.Comment, Start: 0, End: 12},
-		// 		{Kind: token.EOF, Start: 12, End: 12},
-		// 	},
-		// },
-		// {
-		// 	name: "hash comment with line tail",
-		// 	src:  "# A comment\n",
-		// 	want: []token.Token{
-		// 		{Kind: token.Comment, Start: 0, End: 12},
-		// 		{Kind: token.EOF, Start: 12, End: 12},
-		// 	},
-		// },
-		// {
-		// 	name: "slash comment with line tail",
-		// 	src:  "// A comment\n",
-		// 	want: []token.Token{
-		// 		{Kind: token.Comment, Start: 0, End: 13},
-		// 		{Kind: token.EOF, Start: 13, End: 13},
-		// 	},
-		// },
-		// {
-		// 	name: "text",
-		// 	src:  "sometext",
-		// 	want: []token.Token{
-		// 		{Kind: token.Text, Start: 0, End: 8},
-		// 		{Kind: token.EOF, Start: 8, End: 8},
-		// 	},
-		// },
-		// {
-		// 	name: "method but lowercase",
-		// 	src:  "post",
-		// 	want: []token.Token{
-		// 		{Kind: token.Text, Start: 0, End: 4},
-		// 		{Kind: token.EOF, Start: 4, End: 4},
-		// 	},
-		// },
-		// {
-		// 	name: "method get",
-		// 	src:  "GET",
-		// 	want: []token.Token{
-		// 		{Kind: token.MethodGet, Start: 0, End: 3},
-		// 		{Kind: token.EOF, Start: 3, End: 3},
-		// 	},
-		// },
-		// {
-		// 	name: "method head",
-		// 	src:  "HEAD",
-		// 	want: []token.Token{
-		// 		{Kind: token.MethodHead, Start: 0, End: 4},
-		// 		{Kind: token.EOF, Start: 4, End: 4},
-		// 	},
-		// },
-		// {
-		// 	name: "method post",
-		// 	src:  "POST",
-		// 	want: []token.Token{
-		// 		{Kind: token.MethodPost, Start: 0, End: 4},
-		// 		{Kind: token.EOF, Start: 4, End: 4},
-		// 	},
-		// },
-		// {
-		// 	name: "method put",
-		// 	src:  "PUT",
-		// 	want: []token.Token{
-		// 		{Kind: token.MethodPut, Start: 0, End: 3},
-		// 		{Kind: token.EOF, Start: 3, End: 3},
-		// 	},
-		// },
-		// {
-		// 	name: "method delete",
-		// 	src:  "DELETE",
-		// 	want: []token.Token{
-		// 		{Kind: token.MethodDelete, Start: 0, End: 6},
-		// 		{Kind: token.EOF, Start: 6, End: 6},
-		// 	},
-		// },
-		// {
-		// 	name: "method connect",
-		// 	src:  "CONNECT",
-		// 	want: []token.Token{
-		// 		{Kind: token.MethodConnect, Start: 0, End: 7},
-		// 		{Kind: token.EOF, Start: 7, End: 7},
-		// 	},
-		// },
-		// {
-		// 	name: "method patch",
-		// 	src:  "PATCH",
-		// 	want: []token.Token{
-		// 		{Kind: token.MethodPatch, Start: 0, End: 5},
-		// 		{Kind: token.EOF, Start: 5, End: 5},
-		// 	},
-		// },
-		// {
-		// 	name: "method options",
-		// 	src:  "OPTIONS",
-		// 	want: []token.Token{
-		// 		{Kind: token.MethodOptions, Start: 0, End: 7},
-		// 		{Kind: token.EOF, Start: 7, End: 7},
-		// 	},
-		// },
-		// {
-		// 	name: "method trace",
-		// 	src:  "TRACE",
-		// 	want: []token.Token{
-		// 		{Kind: token.MethodTrace, Start: 0, End: 5},
-		// 		{Kind: token.EOF, Start: 5, End: 5},
-		// 	},
-		// },
-		// {
-		// 	name: "request sep",
-		// 	src:  "###",
-		// 	want: []token.Token{
-		// 		{Kind: token.RequestSeparator, Start: 0, End: 3},
-		// 		{Kind: token.EOF, Start: 3, End: 3},
-		// 	},
-		// },
+		{
+			name: "hash comment",
+			src:  "# A comment",
+			want: []token.Token{
+				{Kind: token.Comment, Start: 0, End: 11},
+				{Kind: token.EOF, Start: 11, End: 11},
+			},
+		},
+		{
+			name: "slash comment",
+			src:  "// A comment",
+			want: []token.Token{
+				{Kind: token.Comment, Start: 0, End: 12},
+				{Kind: token.EOF, Start: 12, End: 12},
+			},
+		},
+		{
+			name: "hash comment with line tail",
+			src:  "# A comment\n",
+			want: []token.Token{
+				{Kind: token.Comment, Start: 0, End: 11},
+				// There's a "hidden" (ignored) newline here, hence why EOF starts at 12
+				{Kind: token.EOF, Start: 12, End: 12},
+			},
+		},
+		{
+			name: "slash comment with line tail",
+			src:  "// A comment\n",
+			want: []token.Token{
+				{Kind: token.Comment, Start: 0, End: 12},
+				// There's a "hidden" (ignored) newline here, hence why EOF starts at 13
+				{Kind: token.EOF, Start: 13, End: 13},
+			},
+		},
+		{
+			name: "text",
+			src:  "sometext",
+			want: []token.Token{
+				{Kind: token.Text, Start: 0, End: 8},
+				{Kind: token.EOF, Start: 8, End: 8},
+			},
+		},
+		{
+			name: "method but lowercase",
+			src:  "post",
+			want: []token.Token{
+				{Kind: token.Text, Start: 0, End: 4},
+				{Kind: token.EOF, Start: 4, End: 4},
+			},
+		},
+		{
+			name: "method get",
+			src:  "GET",
+			want: []token.Token{
+				{Kind: token.MethodGet, Start: 0, End: 3},
+				{Kind: token.EOF, Start: 3, End: 3},
+			},
+		},
+		{
+			name: "method head",
+			src:  "HEAD",
+			want: []token.Token{
+				{Kind: token.MethodHead, Start: 0, End: 4},
+				{Kind: token.EOF, Start: 4, End: 4},
+			},
+		},
+		{
+			name: "method post",
+			src:  "POST",
+			want: []token.Token{
+				{Kind: token.MethodPost, Start: 0, End: 4},
+				{Kind: token.EOF, Start: 4, End: 4},
+			},
+		},
+		{
+			name: "method put",
+			src:  "PUT",
+			want: []token.Token{
+				{Kind: token.MethodPut, Start: 0, End: 3},
+				{Kind: token.EOF, Start: 3, End: 3},
+			},
+		},
+		{
+			name: "method delete",
+			src:  "DELETE",
+			want: []token.Token{
+				{Kind: token.MethodDelete, Start: 0, End: 6},
+				{Kind: token.EOF, Start: 6, End: 6},
+			},
+		},
+		{
+			name: "method connect",
+			src:  "CONNECT",
+			want: []token.Token{
+				{Kind: token.MethodConnect, Start: 0, End: 7},
+				{Kind: token.EOF, Start: 7, End: 7},
+			},
+		},
+		{
+			name: "method patch",
+			src:  "PATCH",
+			want: []token.Token{
+				{Kind: token.MethodPatch, Start: 0, End: 5},
+				{Kind: token.EOF, Start: 5, End: 5},
+			},
+		},
+		{
+			name: "method options",
+			src:  "OPTIONS",
+			want: []token.Token{
+				{Kind: token.MethodOptions, Start: 0, End: 7},
+				{Kind: token.EOF, Start: 7, End: 7},
+			},
+		},
+		{
+			name: "method trace",
+			src:  "TRACE",
+			want: []token.Token{
+				{Kind: token.MethodTrace, Start: 0, End: 5},
+				{Kind: token.EOF, Start: 5, End: 5},
+			},
+		},
+		{
+			name: "request sep",
+			src:  "###",
+			want: []token.Token{
+				{Kind: token.RequestSeparator, Start: 0, End: 3},
+				{Kind: token.EOF, Start: 3, End: 3},
+			},
+		},
 	}
 
 	for _, tt := range tests {
