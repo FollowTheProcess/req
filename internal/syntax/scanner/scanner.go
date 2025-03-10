@@ -416,7 +416,8 @@ func scanNumber(s *Scanner) scanFn {
 
 // scanHTTPVersion scans a HTTP version declaration.
 //
-// The next characters in s.src are known to be 'HTTP'.
+// The next characters in s.src are known to be 'HTTP', this consumes
+// the entire thing i.e. 'HTTP/1.1' or 'HTTP/2'.
 func scanHTTPVersion(s *Scanner) scanFn {
 	const httpLen = 4 // len("HTTP")
 	for range httpLen {
@@ -429,8 +430,27 @@ func scanHTTPVersion(s *Scanner) scanFn {
 	}
 
 	s.advance() // Consume the '/'
+
+	// Borrowed from scanNumber above, we need to consume arbitrary digits
+	// but don't want to emit a number token.
+	for isDigit(s.char()) {
+		s.advance()
+
+		if s.char() == '.' {
+			s.advance() // Consume the '.'
+			if !isDigit(s.char()) {
+				s.error("bad number literal in HTTP version")
+				return nil
+			}
+			for isDigit(s.char()) {
+				s.advance()
+			}
+		}
+	}
+
 	s.emit(token.HTTPVersion)
-	return scanNumber
+	s.skip(unicode.IsSpace)
+	return scanStart
 }
 
 // isLineSpace reports whether r is a non line terminating whitespace character,

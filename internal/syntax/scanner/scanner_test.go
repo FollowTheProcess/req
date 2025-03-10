@@ -359,8 +359,7 @@ func TestScanBasics(t *testing.T) {
 			name: "http version",
 			src:  "HTTP/1.1",
 			want: []token.Token{
-				{Kind: token.HTTPVersion, Start: 0, End: 5},
-				{Kind: token.Number, Start: 5, End: 8},
+				{Kind: token.HTTPVersion, Start: 0, End: 8},
 				{Kind: token.EOF, Start: 8, End: 8},
 			},
 		},
@@ -368,8 +367,7 @@ func TestScanBasics(t *testing.T) {
 			name: "http version two",
 			src:  "HTTP/2",
 			want: []token.Token{
-				{Kind: token.HTTPVersion, Start: 0, End: 5},
-				{Kind: token.Number, Start: 5, End: 6},
+				{Kind: token.HTTPVersion, Start: 0, End: 6},
 				{Kind: token.EOF, Start: 6, End: 6},
 			},
 		},
