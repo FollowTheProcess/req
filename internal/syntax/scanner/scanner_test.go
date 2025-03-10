@@ -369,8 +369,8 @@ func TestScanBasics(t *testing.T) {
 	}
 }
 
-func TestScanFiles(t *testing.T) {
-	pattern := filepath.Join("testdata", "TestScanFiles", "*.txtar")
+func TestValid(t *testing.T) {
+	pattern := filepath.Join("testdata", "valid", "*.txtar")
 	files, err := filepath.Glob(pattern)
 	test.Ok(t, err)
 

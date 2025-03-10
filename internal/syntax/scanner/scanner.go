@@ -302,7 +302,10 @@ func scanRequestSep(s *Scanner) scanFn {
 
 	s.emit(token.RequestSeparator)
 
-	if unicode.IsLetter(s.peek()) {
+	// If we have any text on the same line, it's the request name
+	s.skip(isLineSpace)
+
+	if isAlpha(s.char()) {
 		return scanRequestName
 	}
 

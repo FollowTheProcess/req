@@ -1,9 +1,0 @@
--- src.http --
-### Test
-GET https://api.somewhere.com/items/1
--- tokens.txt --
-<Token::RequestSeparator start=0, end=3>
-<Token::Text start=4, end=8>
-<Token::MethodGet start=9, end=12>
-<Token::Text start=13, end=46>
-<Token::EOF start=47, end=47>
