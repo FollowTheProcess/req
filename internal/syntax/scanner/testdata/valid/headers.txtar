@@ -1,0 +1,13 @@
+-- src.http --
+### Test
+GET https://api.somewhere.com/items/1
+Content-Type: application/json
+-- tokens.txt --
+<Token::RequestSeparator start=0, end=3>
+<Token::Text start=4, end=8>
+<Token::MethodGet start=9, end=12>
+<Token::URL start=13, end=46>
+<Token::Text start=47, end=59>
+<Token::Colon start=59, end=60>
+<Token::Text start=61, end=77>
+<Token::EOF start=78, end=78>

@@ -276,7 +276,8 @@ func scanSlash(s *Scanner) scanFn {
 // scanText scans a string of continuous characters, stopping at the first
 // whitespace character.
 func scanText(s *Scanner) scanFn {
-	for !unicode.IsSpace(s.char()) && s.char() != eof {
+	// We exclude ':' because it's a header separator
+	for !unicode.IsSpace(s.char()) && s.char() != ':' && s.char() != eof {
 		s.advance()
 	}
 
@@ -302,6 +303,14 @@ func scanURL(s *Scanner) scanFn {
 	}
 
 	s.emit(token.URL)
+	s.skip(isLineSpace)
+
+	// If the thing next starts with 'HTTP' then it's a http version
+	// declaration
+	if bytes.HasPrefix(s.rest(), []byte("HTTP")) {
+		return scanHTTPVersion
+	}
+
 	s.skip(unicode.IsSpace)
 	return scanStart
 }
