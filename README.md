@@ -29,7 +29,8 @@ Execute `.http` files from the command line
 HTTP_METHOD <url>
 Header-Name: <header value>
 
-// You can also give them names like this
+// You can also give them names like this, although names like this
+// do not allow spaces e.g. 'Delete employee 1' must be 'DeleteEmployee1'
 ###
 # @name <name>
 # @name=<name>
