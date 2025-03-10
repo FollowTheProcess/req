@@ -1,8 +1,13 @@
-package scanner
+// Package syntax handles parsing the raw .http file text into meaningful
+// data structures and implements the tokeniser and parser as well as some
+// language level integration tests.
+package syntax
 
 import "fmt"
 
-// TODO(@FollowTheProcess): Move this and ErrorHandler to the top level syntax package so it can be used across everything
+// An ErrorHandler may be provided to parts of the parsing pipeline. If a syntax error is encountered and
+// a non-nil handler was provided, it is called with the position info and error message.
+type ErrorHandler func(pos Position, msg string)
 
 // Position is an arbitrary source file position including file, line
 // and column information. It can also express a range of source via StartCol
