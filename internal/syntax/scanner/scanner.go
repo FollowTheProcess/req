@@ -2,6 +2,7 @@
 package scanner
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"sync"
@@ -116,6 +117,14 @@ func (s *Scanner) char() rune {
 	return char
 }
 
+// rest returns the rest of src, starting from the current position.
+func (s *Scanner) rest() []byte {
+	if s.pos >= len(s.src) {
+		return nil
+	}
+	return s.src[s.pos:]
+}
+
 // skip ignores any characters for which the predicate returns true, stopping at the
 // first one that returns false such that after it returns, s.advance returns the
 // first 'false' char.
@@ -199,6 +208,8 @@ func scanStart(s *Scanner) scanFn {
 		return scanEq
 	default:
 		switch {
+		case bytes.HasPrefix(s.rest(), []byte("HTTP")):
+			return scanHTTPVersion
 		case isAlpha(char):
 			return scanText
 		case isDigit(char):
@@ -267,6 +278,8 @@ func scanText(s *Scanner) scanFn {
 
 	text := string(s.src[s.start:s.pos])
 	kind, method := token.Method(text)
+	// TODO(@FollowTheProcess): Should we have a token.URL and scan it specifically
+	// rather than just Text?
 	if method {
 		// GET <space> <url>
 		s.emit(kind)
@@ -375,8 +388,26 @@ func scanNumber(s *Scanner) scanFn {
 	}
 
 	s.emit(token.Number)
-	s.skip(isLineSpace)
+	s.skip(unicode.IsSpace)
 	return scanStart
+}
+
+// scanHTTPVersion scans a HTTP version declaration.
+//
+// The next characters in s.src are known to be 'HTTP'.
+func scanHTTPVersion(s *Scanner) scanFn {
+	for range len("HTTP") {
+		s.advance()
+	}
+
+	if s.char() != '/' {
+		s.errorf("bad HTTP version character. expected %q got %q", "/", string(s.char()))
+		return nil
+	}
+
+	s.advance() // Consume the '/'
+	s.emit(token.HTTPVersion)
+	return scanNumber
 }
 
 // isLineSpace reports whether r is a non line terminating whitespace character,
