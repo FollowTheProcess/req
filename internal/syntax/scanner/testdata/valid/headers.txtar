@@ -2,6 +2,8 @@
 ### Test
 GET https://api.somewhere.com/items/1
 Content-Type: application/json
+Accept: application/json
+X-Something-Else: yes
 -- tokens.txt --
 <Token::RequestSeparator start=0, end=3>
 <Token::Text start=4, end=8>
@@ -10,4 +12,10 @@ Content-Type: application/json
 <Token::Text start=47, end=59>
 <Token::Colon start=59, end=60>
 <Token::Text start=61, end=77>
-<Token::EOF start=78, end=78>
+<Token::Text start=78, end=84>
+<Token::Colon start=84, end=85>
+<Token::Text start=86, end=102>
+<Token::Text start=103, end=119>
+<Token::Colon start=119, end=120>
+<Token::Text start=121, end=124>
+<Token::EOF start=125, end=125>
