@@ -17,6 +17,7 @@ const (
 	RequestSeparator             // RequestSeparator
 	At                           // At
 	Eq                           // Eq
+	Colon                        // Colon
 	HTTPVersion                  // HTTPVersion
 	MethodGet                    // MethodGet
 	MethodHead                   // MethodHead

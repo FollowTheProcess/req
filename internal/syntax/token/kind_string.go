@@ -17,21 +17,22 @@ func _() {
 	_ = x[RequestSeparator-6]
 	_ = x[At-7]
 	_ = x[Eq-8]
-	_ = x[HTTPVersion-9]
-	_ = x[MethodGet-10]
-	_ = x[MethodHead-11]
-	_ = x[MethodPost-12]
-	_ = x[MethodPut-13]
-	_ = x[MethodDelete-14]
-	_ = x[MethodConnect-15]
-	_ = x[MethodPatch-16]
-	_ = x[MethodOptions-17]
-	_ = x[MethodTrace-18]
+	_ = x[Colon-9]
+	_ = x[HTTPVersion-10]
+	_ = x[MethodGet-11]
+	_ = x[MethodHead-12]
+	_ = x[MethodPost-13]
+	_ = x[MethodPut-14]
+	_ = x[MethodDelete-15]
+	_ = x[MethodConnect-16]
+	_ = x[MethodPatch-17]
+	_ = x[MethodOptions-18]
+	_ = x[MethodTrace-19]
 }
 
-const _Kind_name = "EOFErrorCommentTextNumberIdentRequestSeparatorAtEqHTTPVersionMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTrace"
+const _Kind_name = "EOFErrorCommentTextNumberIdentRequestSeparatorAtEqColonHTTPVersionMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTrace"
 
-var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 25, 30, 46, 48, 50, 61, 70, 80, 90, 99, 111, 124, 135, 148, 159}
+var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 25, 30, 46, 48, 50, 55, 66, 75, 85, 95, 104, 116, 129, 140, 153, 164}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {

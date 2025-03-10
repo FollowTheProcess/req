@@ -206,6 +206,8 @@ func scanStart(s *Scanner) scanFn {
 		return scanAt
 	case '=':
 		return scanEq
+	case ':':
+		return scanColon
 	default:
 		switch {
 		case bytes.HasPrefix(s.rest(), []byte("HTTP")):
@@ -366,6 +368,14 @@ func scanIdent(s *Scanner) scanFn {
 func scanEq(s *Scanner) scanFn {
 	s.advance() // Consume the '='
 	s.emit(token.Eq)
+	s.skip(isLineSpace)
+	return scanStart
+}
+
+// scanColon scans a ':' character.
+func scanColon(s *Scanner) scanFn {
+	s.advance() // ':'
+	s.emit(token.Colon)
 	s.skip(isLineSpace)
 	return scanStart
 }

@@ -219,6 +219,14 @@ func TestScanBasics(t *testing.T) {
 			},
 		},
 		{
+			name: "colon",
+			src:  ":",
+			want: []token.Token{
+				{Kind: token.Colon, Start: 0, End: 1},
+				{Kind: token.EOF, Start: 1, End: 1},
+			},
+		},
+		{
 			name: "at with ident",
 			src:  "@something",
 			want: []token.Token{
