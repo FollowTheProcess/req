@@ -239,6 +239,7 @@ func scanHash(s *Scanner) scanFn {
 // scanSlash scans a '/' character.
 func scanSlash(s *Scanner) scanFn {
 	if s.peek() != '/' {
+		s.advance()
 		return scanStart
 	}
 

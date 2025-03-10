@@ -538,6 +538,44 @@ func FuzzPosition(f *testing.F) {
 	})
 }
 
+func FuzzScanner(f *testing.F) {
+	// Get all the .http source from testdata for the corpus
+	pattern := filepath.Join("testdata", "valid", "*.txtar")
+	files, err := filepath.Glob(pattern)
+	test.Ok(f, err)
+
+	for _, file := range files {
+		archive, err := txtar.ParseFile(file)
+		test.Ok(f, err)
+
+		src, ok := archive.Read("src.http")
+		test.True(f, ok, test.Context("file %s does not contain 'src.http'", file))
+
+		f.Add(src)
+	}
+
+	// Property: The scanner never panics or loops indefinitely, fuzz
+	// by default will catch both of these
+	f.Fuzz(func(t *testing.T, src string) {
+		// Note: no ErrorHandler installed, because if we let the scanner report syntax
+		// errors it would kill the fuzz test straight away e.g. on the first invalid
+		// utf-8 char
+		scanner, err := scanner.New("fuzz", strings.NewReader(src), nil)
+		test.Ok(t, err)
+
+		for {
+			tok := scanner.Scan()
+
+			// Property: End must be >= Start
+			test.True(t, tok.End >= tok.Start)
+
+			if tok.Kind == token.EOF || tok.Kind == token.Error {
+				break
+			}
+		}
+	})
+}
+
 // testFailHandler returns a [scanner.ErrorHandler] that handles scanning errors by failing
 // the enclosing test.
 func testFailHandler(tb testing.TB) scanner.ErrorHandler {
