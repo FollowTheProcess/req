@@ -2,12 +2,12 @@ package scanner_test
 
 import (
 	"flag"
-	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/FollowTheProcess/req/internal/syntax"
 	"github.com/FollowTheProcess/req/internal/syntax/scanner"
 	"github.com/FollowTheProcess/req/internal/syntax/token"
 	"github.com/FollowTheProcess/test"
@@ -421,123 +421,6 @@ func TestValid(t *testing.T) {
 	}
 }
 
-func TestPositionString(t *testing.T) {
-	tests := []struct {
-		name string           // Name of the test case
-		want string           // Expected return value
-		pos  scanner.Position // Position under test
-	}{
-		{
-			name: "empty",
-			pos:  scanner.Position{},
-			want: `BadPosition: {Name: "", Line: 0, StartCol: 0, EndCol: 0}`,
-		},
-		{
-			name: "missing name",
-			pos:  scanner.Position{Line: 12, StartCol: 2, EndCol: 6},
-			want: `BadPosition: {Name: "", Line: 12, StartCol: 2, EndCol: 6}`,
-		},
-		{
-			name: "zero line",
-			pos:  scanner.Position{Name: "file.txt", Line: 0, StartCol: 12, EndCol: 19},
-			want: `BadPosition: {Name: "file.txt", Line: 0, StartCol: 12, EndCol: 19}`,
-		},
-		{
-			name: "zero start column",
-			pos:  scanner.Position{Name: "file.txt", Line: 4, StartCol: 0, EndCol: 19},
-			want: `BadPosition: {Name: "file.txt", Line: 4, StartCol: 0, EndCol: 19}`,
-		},
-		{
-			name: "zero end column",
-			pos:  scanner.Position{Name: "file.txt", Line: 4, StartCol: 1, EndCol: 0},
-			want: `BadPosition: {Name: "file.txt", Line: 4, StartCol: 1, EndCol: 0}`,
-		},
-		{
-			name: "end less than start",
-			pos:  scanner.Position{Name: "test.http", Line: 1, StartCol: 6, EndCol: 4},
-			want: `BadPosition: {Name: "test.http", Line: 1, StartCol: 6, EndCol: 4}`,
-		},
-		{
-			name: "valid single column",
-			pos:  scanner.Position{Name: "demo.http", Line: 1, StartCol: 6, EndCol: 6},
-			want: "demo.http:1:6",
-		},
-		{
-			name: "valid column range",
-			pos:  scanner.Position{Name: "demo.http", Line: 17, StartCol: 20, EndCol: 26},
-			want: "demo.http:17:20-26",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			test.Equal(t, tt.pos.String(), tt.want)
-		})
-	}
-}
-
-func FuzzPosition(f *testing.F) {
-	f.Add("", 0, 0, 0)
-	f.Add("name.txt", 1, 1, 2)
-	f.Add("valid.http", 12, 17, 19)
-	f.Add("invalid.http", 0, -9, 9999)
-
-	f.Fuzz(func(t *testing.T, name string, line, startCol, endCol int) {
-		pos := scanner.Position{
-			Name:     name,
-			Line:     line,
-			StartCol: startCol,
-			EndCol:   endCol,
-		}
-
-		got := pos.String()
-
-		// Property: If IsValid returns false, the string must be this format
-		if !pos.IsValid() {
-			want := fmt.Sprintf(
-				"BadPosition: {Name: %q, Line: %d, StartCol: %d, EndCol: %d}",
-				name,
-				line,
-				startCol,
-				endCol,
-			)
-			test.Equal(t, got, want)
-			return
-		}
-
-		// Property: If IsValid returned true, Line must be >= 1
-		test.True(t, pos.Line >= 1, test.Context("IsValid() = true but pos.Line (%d) was not >= 1", pos.Line))
-
-		// Property: If IsValid returned true, StartCol must be >= 1
-		test.True(
-			t,
-			pos.StartCol >= 1,
-			test.Context("IsValid() = true but pos.StartCol (%d) was not >= 1", pos.StartCol),
-		)
-
-		// Property: If IsValid returned true, EndCol must be >= 1
-		test.True(t, pos.EndCol >= 1, test.Context("IsValid() = true but pos.EndCol (%d) was not >= 1", pos.EndCol))
-
-		// Property: If IsValid returned true, EndCol must also be >= StartCol
-		test.True(
-			t,
-			pos.EndCol >= pos.StartCol,
-			test.Context("IsValid() = true but pos.EndCol (%d) was not >= pos.StartCol (%d)", pos.EndCol, pos.StartCol),
-		)
-
-		// Property: If StartCol == EndCol, no range must appear in the string
-		if startCol == endCol {
-			want := fmt.Sprintf("%s:%d:%d", name, line, startCol)
-			test.Equal(t, got, want)
-			return
-		}
-
-		// Otherwise the position must be a valid position with a column range
-		want := fmt.Sprintf("%s:%d:%d-%d", name, line, startCol, endCol)
-		test.Equal(t, got, want)
-	})
-}
-
 func FuzzScanner(f *testing.F) {
 	// Get all the .http source from testdata for the corpus
 	pattern := filepath.Join("testdata", "valid", "*.txtar")
@@ -578,9 +461,9 @@ func FuzzScanner(f *testing.F) {
 
 // testFailHandler returns a [scanner.ErrorHandler] that handles scanning errors by failing
 // the enclosing test.
-func testFailHandler(tb testing.TB) scanner.ErrorHandler {
+func testFailHandler(tb testing.TB) syntax.ErrorHandler {
 	tb.Helper()
-	return func(pos scanner.Position, msg string) {
+	return func(pos syntax.Position, msg string) {
 		tb.Fatalf("%s: %s", pos, msg)
 	}
 }

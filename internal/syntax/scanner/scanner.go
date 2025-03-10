@@ -8,6 +8,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/FollowTheProcess/req/internal/syntax"
 	"github.com/FollowTheProcess/req/internal/syntax/token"
 )
 
@@ -18,26 +19,22 @@ const (
 // scanFn represents the state of the scanner as a function that returns the next state.
 type scanFn func(*Scanner) scanFn
 
-// An ErrorHandler may be provided to the [Scanner]. If a syntax error is encountered and
-// a non-nil handler was provided, it is called with the position info and error message.
-type ErrorHandler func(pos Position, msg string)
-
 // Scanner is the http file scanner.
 type Scanner struct {
-	handler   ErrorHandler     // The error handler, if any
-	tokens    chan token.Token // Channel on which to emit scanned tokens
-	name      string           // Name of the file
-	src       []byte           // Raw source text
-	start     int              // The start position of the current token
-	pos       int              // Current scanner position in src (bytes, 0 indexed)
-	line      int              // Current line number (1 indexed)
-	lineStart int              // Offset at which the current line started
-	width     int              // Width of the last rune read from input, so we can backup
-	wg        sync.WaitGroup   // handler gets run in a goroutine so it doesn't block the main state machine
+	handler   syntax.ErrorHandler // The error handler, if any
+	tokens    chan token.Token    // Channel on which to emit scanned tokens
+	name      string              // Name of the file
+	src       []byte              // Raw source text
+	start     int                 // The start position of the current token
+	pos       int                 // Current scanner position in src (bytes, 0 indexed)
+	line      int                 // Current line number (1 indexed)
+	lineStart int                 // Offset at which the current line started
+	width     int                 // Width of the last rune read from input, so we can backup
+	wg        sync.WaitGroup      // handler gets run in a goroutine so it doesn't block the main state machine
 }
 
 // New returns a new [Scanner] that reads from r.
-func New(name string, r io.Reader, handler ErrorHandler) (*Scanner, error) {
+func New(name string, r io.Reader, handler syntax.ErrorHandler) (*Scanner, error) {
 	// .http files are small, it's fine to just read it in one go
 	src, err := io.ReadAll(r)
 	if err != nil {
@@ -168,7 +165,7 @@ func (s *Scanner) error(msg string) {
 	startCol := 1 + s.start - s.lineStart
 	endCol := 1 + s.pos - s.lineStart
 
-	position := Position{
+	position := syntax.Position{
 		Name:     s.name,
 		Line:     s.line,
 		StartCol: startCol,
