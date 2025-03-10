@@ -212,6 +212,8 @@ func scanStart(s *Scanner) scanFn {
 		switch {
 		case bytes.HasPrefix(s.rest(), []byte("HTTP")):
 			return scanHTTPVersion
+		case bytes.HasPrefix(s.rest(), []byte("http")):
+			return scanURL
 		case isAlpha(char):
 			return scanText
 		case isDigit(char):
@@ -280,16 +282,26 @@ func scanText(s *Scanner) scanFn {
 
 	text := string(s.src[s.start:s.pos])
 	kind, method := token.Method(text)
-	// TODO(@FollowTheProcess): Should we have a token.URL and scan it specifically
-	// rather than just Text?
 	if method {
-		// GET <space> <url>
+		// GET {space but not \n} <url> [HTTP Version]
 		s.emit(kind)
 		s.skip(isLineSpace)
 		return scanStart
 	}
 
 	s.emit(kind)
+	s.skip(unicode.IsSpace)
+	return scanStart
+}
+
+// scanURL scans a URL, which for now we assume is anything that isn't
+// whitespace.
+func scanURL(s *Scanner) scanFn {
+	for !unicode.IsSpace(s.char()) && s.char() != eof {
+		s.advance()
+	}
+
+	s.emit(token.URL)
 	s.skip(unicode.IsSpace)
 	return scanStart
 }
@@ -406,7 +418,8 @@ func scanNumber(s *Scanner) scanFn {
 //
 // The next characters in s.src are known to be 'HTTP'.
 func scanHTTPVersion(s *Scanner) scanFn {
-	for range len("HTTP") {
+	const httpLen = 4 // len("HTTP")
+	for range httpLen {
 		s.advance()
 	}
 

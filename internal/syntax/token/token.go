@@ -13,6 +13,7 @@ const (
 	Comment                      // Comment
 	Text                         // Text
 	Number                       // Number
+	URL                          // URL
 	Ident                        // Ident
 	RequestSeparator             // RequestSeparator
 	At                           // At
