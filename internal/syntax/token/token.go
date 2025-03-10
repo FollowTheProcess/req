@@ -12,6 +12,7 @@ const (
 	Error                        // Error
 	Comment                      // Comment
 	Text                         // Text
+	Number                       // Number
 	Ident                        // Ident
 	RequestSeparator             // RequestSeparator
 	At                           // At

@@ -152,6 +152,22 @@ func TestScanBasics(t *testing.T) {
 			},
 		},
 		{
+			name: "integer",
+			src:  "256",
+			want: []token.Token{
+				{Kind: token.Number, Start: 0, End: 3},
+				{Kind: token.EOF, Start: 3, End: 3},
+			},
+		},
+		{
+			name: "float",
+			src:  "3.14159",
+			want: []token.Token{
+				{Kind: token.Number, Start: 0, End: 7},
+				{Kind: token.EOF, Start: 7, End: 7},
+			},
+		},
+		{
 			name: "request sep",
 			src:  "###",
 			want: []token.Token{
@@ -204,22 +220,131 @@ func TestScanBasics(t *testing.T) {
 		},
 		{
 			name: "at with ident",
-			src:  "@timeout",
+			src:  "@something",
 			want: []token.Token{
 				{Kind: token.At, Start: 0, End: 1},
-				{Kind: token.Ident, Start: 1, End: 8},
-				{Kind: token.EOF, Start: 8, End: 8},
+				{Kind: token.Ident, Start: 1, End: 10},
+				{Kind: token.EOF, Start: 10, End: 10},
+			},
+		},
+		{
+			name: "at with ident and line tail",
+			src:  "@something\n",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 10},
+				{Kind: token.EOF, Start: 11, End: 11},
 			},
 		},
 		{
 			name: "at ident equal value",
-			src:  "@timeout=value",
+			src:  "@something=value",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 10},
+				{Kind: token.Eq, Start: 10, End: 11},
+				{Kind: token.Text, Start: 11, End: 16},
+				{Kind: token.EOF, Start: 16, End: 16},
+			},
+		},
+		{
+			name: "at ident equal integer",
+			src:  "@timeout=20",
 			want: []token.Token{
 				{Kind: token.At, Start: 0, End: 1},
 				{Kind: token.Ident, Start: 1, End: 8},
 				{Kind: token.Eq, Start: 8, End: 9},
-				{Kind: token.Text, Start: 9, End: 14},
-				{Kind: token.EOF, Start: 14, End: 14},
+				{Kind: token.Number, Start: 9, End: 11},
+				{Kind: token.EOF, Start: 11, End: 11},
+			},
+		},
+		{
+			name: "at ident equal duration",
+			src:  "@timeout=20s",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 8},
+				{Kind: token.Eq, Start: 8, End: 9},
+				{Kind: token.Number, Start: 9, End: 11},
+				{Kind: token.Text, Start: 11, End: 12},
+				{Kind: token.EOF, Start: 12, End: 12},
+			},
+		},
+		{
+			name: "at ident equal space duration",
+			src:  "@timeout=20 s",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 8},
+				{Kind: token.Eq, Start: 8, End: 9},
+				{Kind: token.Number, Start: 9, End: 11},
+				{Kind: token.Text, Start: 12, End: 13},
+				{Kind: token.EOF, Start: 13, End: 13},
+			},
+		},
+		{
+			name: "at ident equal duration line tail",
+			src:  "@timeout=20s\n",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 8},
+				{Kind: token.Eq, Start: 8, End: 9},
+				{Kind: token.Number, Start: 9, End: 11},
+				{Kind: token.Text, Start: 11, End: 12},
+				{Kind: token.EOF, Start: 13, End: 13},
+			},
+		},
+		{
+			name: "at ident equal value line tail",
+			src:  "@something=value\n",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 10},
+				{Kind: token.Eq, Start: 10, End: 11},
+				{Kind: token.Text, Start: 11, End: 16},
+				{Kind: token.EOF, Start: 17, End: 17},
+			},
+		},
+		{
+			name: "at ident space value",
+			src:  "@something value",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 10},
+				{Kind: token.Text, Start: 11, End: 16},
+				{Kind: token.EOF, Start: 16, End: 16},
+			},
+		},
+		{
+			name: "at ident space value line tail",
+			src:  "@something value\n",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 10},
+				{Kind: token.Text, Start: 11, End: 16},
+				{Kind: token.EOF, Start: 17, End: 17},
+			},
+		},
+		{
+			name: "at ident space equal value",
+			src:  "@something = value",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 10},
+				{Kind: token.Eq, Start: 11, End: 12},
+				{Kind: token.Text, Start: 13, End: 18},
+				{Kind: token.EOF, Start: 18, End: 18},
+			},
+		},
+		{
+			name: "at ident space equal value line tail",
+			src:  "@something = value\n",
+			want: []token.Token{
+				{Kind: token.At, Start: 0, End: 1},
+				{Kind: token.Ident, Start: 1, End: 10},
+				{Kind: token.Eq, Start: 11, End: 12},
+				{Kind: token.Text, Start: 13, End: 18},
+				{Kind: token.EOF, Start: 19, End: 19},
 			},
 		},
 	}
@@ -245,8 +370,6 @@ func TestScanBasics(t *testing.T) {
 }
 
 func TestScanFiles(t *testing.T) {
-	// t.Skipf("TODO: This is skipped until we can scan more things, particularly whitespace significance")
-
 	pattern := filepath.Join("testdata", "TestScanFiles", "*.txtar")
 	files, err := filepath.Glob(pattern)
 	test.Ok(t, err)
