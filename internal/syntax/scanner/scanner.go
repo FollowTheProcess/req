@@ -201,12 +201,16 @@ func scanStart(s *Scanner) scanFn {
 	case '=':
 		return scanEq
 	default:
-		if unicode.IsLetter(char) {
+		switch {
+		case isAlpha(char):
 			return scanText
+		case isDigit(char):
+			return scanNumber
+		default:
+			s.emit(token.Error)
+			s.errorf("unexpected token %q", string(s.char()))
+			return nil
 		}
-		s.emit(token.Error)
-		s.errorf("unexpected token %q", string(s.char()))
-		return nil
 	}
 }
 
@@ -340,6 +344,7 @@ func scanIdent(s *Scanner) scanFn {
 	}
 
 	s.emit(token.Ident)
+	s.skip(unicode.IsSpace)
 	return scanStart
 }
 
@@ -347,6 +352,29 @@ func scanIdent(s *Scanner) scanFn {
 func scanEq(s *Scanner) scanFn {
 	s.advance() // Consume the '='
 	s.emit(token.Eq)
+	s.skip(isLineSpace)
+	return scanStart
+}
+
+// scanNumber scans a number literal.
+func scanNumber(s *Scanner) scanFn {
+	for isDigit(s.char()) {
+		s.advance()
+
+		if s.char() == '.' {
+			s.advance() // Consume the '.'
+			if !isDigit(s.char()) {
+				s.error("bad number literal")
+				return nil
+			}
+			for isDigit(s.char()) {
+				s.advance()
+			}
+		}
+	}
+
+	s.emit(token.Number)
+	s.skip(isLineSpace)
 	return scanStart
 }
 
@@ -363,5 +391,10 @@ func isAlpha(r rune) bool {
 
 // isIdent reports whether r is a valid identifier character.
 func isIdent(r rune) bool {
-	return isAlpha(r) || (r >= '0' && r <= '9') || r == '_' || r == '-'
+	return isAlpha(r) || isDigit(r) || r == '_' || r == '-'
+}
+
+// isDigit reports whether r is a valid ASCII digit.
+func isDigit(r rune) bool {
+	return r >= '0' && r <= '9'
 }
