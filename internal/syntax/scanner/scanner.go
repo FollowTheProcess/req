@@ -195,6 +195,10 @@ func (s *Scanner) errorf(format string, a ...any) {
 
 // scanStart is the initial state of the scanner.
 func scanStart(s *Scanner) scanFn {
+	// TODO(@FollowTheProcess): Request body
+	// I think we might need something other than token.Text. Body is
+	// everything after the URL or headers after a '\n\n' up to the next
+	// '###' delimiter, eof, or a '--boundary--' marking multipart uploads
 	switch char := s.char(); char {
 	case eof:
 		return nil // Break the state machine
