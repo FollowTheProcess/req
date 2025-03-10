@@ -14,5 +14,5 @@ GET https://api.somewhere.com/items/1
 <Token::Number start=31, end=34>
 <Token::Text start=34, end=35>
 <Token::MethodGet start=36, end=39>
-<Token::Text start=40, end=73>
+<Token::URL start=40, end=73>
 <Token::EOF start=74, end=74>

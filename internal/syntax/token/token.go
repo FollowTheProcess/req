@@ -13,10 +13,12 @@ const (
 	Comment                      // Comment
 	Text                         // Text
 	Number                       // Number
+	URL                          // URL
 	Ident                        // Ident
 	RequestSeparator             // RequestSeparator
 	At                           // At
 	Eq                           // Eq
+	Colon                        // Colon
 	HTTPVersion                  // HTTPVersion
 	MethodGet                    // MethodGet
 	MethodHead                   // MethodHead

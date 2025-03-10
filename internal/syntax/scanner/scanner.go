@@ -206,10 +206,14 @@ func scanStart(s *Scanner) scanFn {
 		return scanAt
 	case '=':
 		return scanEq
+	case ':':
+		return scanColon
 	default:
 		switch {
 		case bytes.HasPrefix(s.rest(), []byte("HTTP")):
 			return scanHTTPVersion
+		case bytes.HasPrefix(s.rest(), []byte("http")):
+			return scanURL
 		case isAlpha(char):
 			return scanText
 		case isDigit(char):
@@ -272,22 +276,41 @@ func scanSlash(s *Scanner) scanFn {
 // scanText scans a string of continuous characters, stopping at the first
 // whitespace character.
 func scanText(s *Scanner) scanFn {
-	for !unicode.IsSpace(s.char()) && s.char() != eof {
+	// We exclude ':' because it's a header separator
+	for !unicode.IsSpace(s.char()) && s.char() != ':' && s.char() != eof {
 		s.advance()
 	}
 
 	text := string(s.src[s.start:s.pos])
 	kind, method := token.Method(text)
-	// TODO(@FollowTheProcess): Should we have a token.URL and scan it specifically
-	// rather than just Text?
 	if method {
-		// GET <space> <url>
+		// GET {space but not \n} <url> [HTTP Version]
 		s.emit(kind)
 		s.skip(isLineSpace)
 		return scanStart
 	}
 
 	s.emit(kind)
+	s.skip(unicode.IsSpace)
+	return scanStart
+}
+
+// scanURL scans a URL, which for now we assume is anything that isn't
+// whitespace.
+func scanURL(s *Scanner) scanFn {
+	for !unicode.IsSpace(s.char()) && s.char() != eof {
+		s.advance()
+	}
+
+	s.emit(token.URL)
+	s.skip(isLineSpace)
+
+	// If the thing next starts with 'HTTP' then it's a http version
+	// declaration
+	if bytes.HasPrefix(s.rest(), []byte("HTTP")) {
+		return scanHTTPVersion
+	}
+
 	s.skip(unicode.IsSpace)
 	return scanStart
 }
@@ -370,6 +393,14 @@ func scanEq(s *Scanner) scanFn {
 	return scanStart
 }
 
+// scanColon scans a ':' character.
+func scanColon(s *Scanner) scanFn {
+	s.advance() // ':'
+	s.emit(token.Colon)
+	s.skip(isLineSpace)
+	return scanStart
+}
+
 // scanNumber scans a number literal.
 func scanNumber(s *Scanner) scanFn {
 	for isDigit(s.char()) {
@@ -394,9 +425,11 @@ func scanNumber(s *Scanner) scanFn {
 
 // scanHTTPVersion scans a HTTP version declaration.
 //
-// The next characters in s.src are known to be 'HTTP'.
+// The next characters in s.src are known to be 'HTTP', this consumes
+// the entire thing i.e. 'HTTP/1.1' or 'HTTP/2'.
 func scanHTTPVersion(s *Scanner) scanFn {
-	for range len("HTTP") {
+	const httpLen = 4 // len("HTTP")
+	for range httpLen {
 		s.advance()
 	}
 
@@ -406,8 +439,27 @@ func scanHTTPVersion(s *Scanner) scanFn {
 	}
 
 	s.advance() // Consume the '/'
+
+	// Borrowed from scanNumber above, we need to consume arbitrary digits
+	// but don't want to emit a number token.
+	for isDigit(s.char()) {
+		s.advance()
+
+		if s.char() == '.' {
+			s.advance() // Consume the '.'
+			if !isDigit(s.char()) {
+				s.error("bad number literal in HTTP version")
+				return nil
+			}
+			for isDigit(s.char()) {
+				s.advance()
+			}
+		}
+	}
+
 	s.emit(token.HTTPVersion)
-	return scanNumber
+	s.skip(unicode.IsSpace)
+	return scanStart
 }
 
 // isLineSpace reports whether r is a non line terminating whitespace character,
