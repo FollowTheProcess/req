@@ -63,9 +63,8 @@ func (s *Scanner) Scan() token.Token {
 	return <-s.tokens
 }
 
-// advance returns, and consumes, the next character in the input or [eof].
-func (s *Scanner) advance() rune { //nolint: unparam // We will use this, just not yet
-	// TODO(@FollowTheProcess): We don't need to return things from this
+// next returns, and consumes, the next character in the input or [eof].
+func (s *Scanner) next() rune {
 	if s.pos >= len(s.src) {
 		return eof
 	}
@@ -127,10 +126,11 @@ func (s *Scanner) rest() []byte {
 // first one that returns false such that after it returns, s.advance returns the
 // first 'false' char.
 //
-// The scanner start position is brought up to the current position before returning.
+// The scanner start position is brought up to the current position before returning, effectively
+// ignoring everything it's travelled over in the meantime.
 func (s *Scanner) skip(predicate func(r rune) bool) {
 	for predicate(s.char()) {
-		s.advance()
+		s.next()
 	}
 	s.start = s.pos
 }
@@ -187,10 +187,6 @@ func (s *Scanner) errorf(format string, a ...any) {
 
 // scanStart is the initial state of the scanner.
 func scanStart(s *Scanner) scanFn {
-	// TODO(@FollowTheProcess): Request body
-	// I think we might need something other than token.Text. Body is
-	// everything after the URL or headers after a '\n\n' up to the next
-	// '###' delimiter, eof, or a '--boundary--' marking multipart uploads
 	switch char := s.char(); char {
 	case eof:
 		return nil // Break the state machine
@@ -215,8 +211,8 @@ func scanStart(s *Scanner) scanFn {
 		case isDigit(char):
 			return scanNumber
 		default:
-			s.emit(token.Error)
 			s.errorf("unexpected token %q", string(s.char()))
+			s.emit(token.Error)
 			return nil
 		}
 	}
@@ -228,7 +224,7 @@ func scanHash(s *Scanner) scanFn {
 		return scanRequestSep
 	}
 
-	s.advance() // Consume the '#'
+	s.next() // Consume the '#'
 
 	// Ignore any (non line terminating) whitespace between the
 	// '#' and the comment text
@@ -236,7 +232,7 @@ func scanHash(s *Scanner) scanFn {
 
 	// Now absorb any text until the the end of the line or eof
 	for s.char() != '\n' && s.char() != eof {
-		s.advance()
+		s.next()
 	}
 
 	s.emit(token.Comment)
@@ -247,13 +243,13 @@ func scanHash(s *Scanner) scanFn {
 // scanSlash scans a '/' character.
 func scanSlash(s *Scanner) scanFn {
 	if s.peek() != '/' {
-		s.advance()
+		s.next()
 		return scanStart
 	}
 
 	// It's a '//' style comment, consume both '//'
-	s.advance()
-	s.advance()
+	s.next()
+	s.next()
 
 	// Ignore any (non line terminating) whitespace between the
 	// '//' and the comment text
@@ -261,7 +257,7 @@ func scanSlash(s *Scanner) scanFn {
 
 	// Now absorb any text until the the end of the line or eof
 	for s.char() != '\n' && s.char() != eof {
-		s.advance()
+		s.next()
 	}
 
 	s.emit(token.Comment)
@@ -272,9 +268,8 @@ func scanSlash(s *Scanner) scanFn {
 // scanText scans a string of continuous characters, stopping at the first
 // whitespace character.
 func scanText(s *Scanner) scanFn {
-	// We exclude ':' because it's a header separator
-	for !unicode.IsSpace(s.char()) && s.char() != ':' && s.char() != eof {
-		s.advance()
+	for !unicode.IsSpace(s.char()) && s.char() != eof {
+		s.next()
 	}
 
 	text := string(s.src[s.start:s.pos])
@@ -295,7 +290,7 @@ func scanText(s *Scanner) scanFn {
 // whitespace.
 func scanURL(s *Scanner) scanFn {
 	for !unicode.IsSpace(s.char()) && s.char() != eof {
-		s.advance()
+		s.next()
 	}
 
 	s.emit(token.URL)
@@ -309,7 +304,7 @@ func scanURL(s *Scanner) scanFn {
 
 	// Skip to the next line
 	if s.char() == '\n' {
-		s.advance()
+		s.next()
 		s.start = s.pos
 	}
 
@@ -340,7 +335,7 @@ func scanRequestSep(s *Scanner) scanFn {
 	const sepLength = 3 // len("###")
 	for s.char() == '#' {
 		count++
-		s.advance()
+		s.next()
 		if count == sepLength {
 			break
 		}
@@ -366,7 +361,7 @@ func scanRequestName(s *Scanner) scanFn {
 	// Scan the request name which is any char up until
 	// the next '\n' or eof.
 	for s.char() != '\n' && s.char() != eof {
-		s.advance()
+		s.next()
 	}
 
 	s.emit(token.Text)
@@ -376,7 +371,7 @@ func scanRequestName(s *Scanner) scanFn {
 
 // scanAt scans a '@' character.
 func scanAt(s *Scanner) scanFn {
-	s.advance() // Consume the '@'
+	s.next() // Consume the '@'
 	s.emit(token.At)
 
 	if isAlpha(s.char()) {
@@ -389,7 +384,7 @@ func scanAt(s *Scanner) scanFn {
 // scanIdent scans an identifier.
 func scanIdent(s *Scanner) scanFn {
 	for isIdent(s.char()) {
-		s.advance()
+		s.next()
 	}
 
 	s.emit(token.Ident)
@@ -399,7 +394,7 @@ func scanIdent(s *Scanner) scanFn {
 
 // scanEq scans a '=' character.
 func scanEq(s *Scanner) scanFn {
-	s.advance() // Consume the '='
+	s.next() // Consume the '='
 	s.emit(token.Eq)
 	s.skip(isLineSpace)
 	return scanStart
@@ -407,7 +402,7 @@ func scanEq(s *Scanner) scanFn {
 
 // scanColon scans a ':' character.
 func scanColon(s *Scanner) scanFn {
-	s.advance() // ':'
+	s.next() // ':'
 	s.emit(token.Colon)
 	s.skip(isLineSpace)
 	return scanStart
@@ -416,16 +411,16 @@ func scanColon(s *Scanner) scanFn {
 // scanNumber scans a number literal.
 func scanNumber(s *Scanner) scanFn {
 	for isDigit(s.char()) {
-		s.advance()
+		s.next()
 
 		if s.char() == '.' {
-			s.advance() // Consume the '.'
+			s.next() // Consume the '.'
 			if !isDigit(s.char()) {
 				s.error("bad number literal")
 				return nil
 			}
 			for isDigit(s.char()) {
-				s.advance()
+				s.next()
 			}
 		}
 	}
@@ -442,7 +437,7 @@ func scanNumber(s *Scanner) scanFn {
 func scanHTTPVersion(s *Scanner) scanFn {
 	const httpLen = 4 // len("HTTP")
 	for range httpLen {
-		s.advance()
+		s.next()
 	}
 
 	if s.char() != '/' {
@@ -450,28 +445,28 @@ func scanHTTPVersion(s *Scanner) scanFn {
 		return nil
 	}
 
-	s.advance() // Consume the '/'
+	s.next() // Consume the '/'
 
 	// Borrowed from scanNumber above, we need to consume arbitrary digits
 	// but don't want to emit a number token.
 	for isDigit(s.char()) {
-		s.advance()
+		s.next()
 
 		if s.char() == '.' {
-			s.advance() // Consume the '.'
+			s.next() // Consume the '.'
 			if !isDigit(s.char()) {
 				s.error("bad number literal in HTTP version")
 				return nil
 			}
 			for isDigit(s.char()) {
-				s.advance()
+				s.next()
 			}
 		}
 	}
 
 	s.emit(token.HTTPVersion)
 	if s.char() == '\n' {
-		s.advance()
+		s.next()
 		s.start = s.pos
 	}
 
@@ -491,7 +486,7 @@ func scanHTTPVersion(s *Scanner) scanFn {
 // in the file, the second is the body separator and obviously eof is eof.
 func scanHeaders(s *Scanner) scanFn {
 	for isIdent(s.char()) {
-		s.advance()
+		s.next()
 	}
 
 	if s.char() == eof {
@@ -502,14 +497,14 @@ func scanHeaders(s *Scanner) scanFn {
 	s.emit(token.Header)
 
 	if s.char() == ':' {
-		s.advance()
+		s.next()
 		s.emit(token.Colon)
 	}
 
 	// The value is anything to the end of the line
 	s.skip(isLineSpace)
 	for s.char() != '\n' && s.char() != eof {
-		s.advance()
+		s.next()
 	}
 
 	s.emit(token.Text)
@@ -532,17 +527,44 @@ func scanHeaders(s *Scanner) scanFn {
 // scanBody scans a request body which is defined as anything up to
 // the next request delimiter, a '--boundary--', or eof.
 func scanBody(s *Scanner) scanFn {
+	// TODO(@FollowTheProcess): Handle multipart --boundary--
 	if s.char() == eof {
 		return scanStart
 	}
 
-	for !bytes.HasPrefix(s.rest(), []byte("###")) && !bytes.HasPrefix(s.rest(), []byte("--")) && s.char() != eof {
-		s.advance()
+	// It's either a file name like < ./input.json
+	// or a response reference like <> ./previous.json
+	if s.char() == '<' {
+		return scanLeftAngle
+	}
+
+	for !bytes.HasPrefix(s.rest(), []byte("###")) && s.char() != eof {
+		s.next()
 	}
 
 	s.emit(token.Body)
 	s.skip(unicode.IsSpace)
 	return scanStart
+}
+
+// scanLeftAngle scans the '<' char.
+//
+// In the context of a request body this can either mean:
+//   - Fetch the body from a file e.g. < ./input.json
+//   - Response reference e.g. <> ./previous.200.json
+func scanLeftAngle(s *Scanner) scanFn {
+	s.next() // Consume the '<'
+	s.emit(token.LeftAngle)
+
+	// Is it a response reference?
+	if s.next() == '>' {
+		s.emit(token.RightAngle)
+	}
+
+	s.skip(isLineSpace)
+
+	// It must be followed by a text line describing the filepath
+	return scanText
 }
 
 // isLineSpace reports whether r is a non line terminating whitespace character,
