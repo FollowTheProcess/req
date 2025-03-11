@@ -68,6 +68,7 @@ func (s *Scanner) Scan() token.Token {
 
 // advance returns, and consumes, the next character in the input or [eof].
 func (s *Scanner) advance() rune { //nolint: unparam // We will use this, just not yet
+	// TODO(@FollowTheProcess): We don't need to return things from this
 	if s.pos >= len(s.src) {
 		return eof
 	}
@@ -315,8 +316,25 @@ func scanURL(s *Scanner) scanFn {
 		return scanHTTPVersion
 	}
 
+	// Skip to the next line
+	if s.char() == '\n' {
+		s.advance()
+		s.start = s.pos
+	}
+
+	// If there is now characters and not another newline, it should be request headers
+	if isAlpha(s.char()) {
+		// TODO(@FollowTheProcess): Now we know these are headers, we could specialise
+		return scanStart
+	}
+
+	// Otherwise it's either a body or another request
 	s.skip(unicode.IsSpace)
-	return scanStart
+	if bytes.HasPrefix(s.rest(), []byte("###")) {
+		return scanStart
+	}
+
+	return scanBody
 }
 
 // scanRequestSep scans the literal '###' request separator. No '#'
@@ -462,6 +480,22 @@ func scanHTTPVersion(s *Scanner) scanFn {
 	}
 
 	s.emit(token.HTTPVersion)
+	s.skip(unicode.IsSpace)
+	return scanStart
+}
+
+// scanBody scans a request body which is defined as anything up to
+// the next request delimiter, a '--boundary--', or eof.
+func scanBody(s *Scanner) scanFn {
+	if s.char() == eof {
+		return scanStart
+	}
+
+	for !bytes.HasPrefix(s.rest(), []byte("###")) && !bytes.HasPrefix(s.rest(), []byte("--")) && s.char() != eof {
+		s.advance()
+	}
+
+	s.emit(token.Body)
 	s.skip(unicode.IsSpace)
 	return scanStart
 }
