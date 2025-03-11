@@ -15,7 +15,7 @@ Execute `.http` files from the command line
 
 ## Project Description
 
-`req` is a command line toolkit to work with `.http` files as per the <https://github.com/JetBrains/http-request-in-editor-spec> specification. See <https://www.jetbrains.com/help/idea/exploring-http-syntax.html> for an overview of the syntax but the **TL;DR** is:
+`req` is a command line toolkit to execute `.http` files
 
 ```plaintext
 // Comments can begin with slashes '/' or hashes '#' and last until the next newline character '\n'
@@ -51,6 +51,8 @@ Content-Type: application/json
   "name": "Namey McNamerson"
 }
 ```
+
+See the [Spec] and [Syntax Guide] for more info.
 
 > [!NOTE]
 > The custom javascript portions (e.g. the `{% ... %}` blocks) of the spec are **not** implemented as these are editor specific and require a javascript runtime.
@@ -113,3 +115,5 @@ This package was created with [copier] and the [FollowTheProcess/go_copier] proj
 [FollowTheProcess/go_copier]: https://github.com/FollowTheProcess/go_copier
 [GitHub release]: https://github.com/FollowTheProcess/req/releases
 [homebrew]: https://brew.sh
+[Spec]: https://github.com/JetBrains/http-request-in-editor-spec
+[Syntax Guide]: https://www.jetbrains.com/help/idea/exploring-http-syntax.html

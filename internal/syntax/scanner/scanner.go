@@ -68,6 +68,7 @@ func (s *Scanner) Scan() token.Token {
 
 // advance returns, and consumes, the next character in the input or [eof].
 func (s *Scanner) advance() rune { //nolint: unparam // We will use this, just not yet
+	// TODO(@FollowTheProcess): We don't need to return things from this
 	if s.pos >= len(s.src) {
 		return eof
 	}
@@ -315,8 +316,24 @@ func scanURL(s *Scanner) scanFn {
 		return scanHTTPVersion
 	}
 
+	// Skip to the next line
+	if s.char() == '\n' {
+		s.advance()
+		s.start = s.pos
+	}
+
+	// If there is now characters and not another newline, it should be request headers
+	if isAlpha(s.char()) {
+		return scanHeaders
+	}
+
+	// Otherwise it's either a body or another request
 	s.skip(unicode.IsSpace)
-	return scanStart
+	if bytes.HasPrefix(s.rest(), []byte("###")) {
+		return scanStart
+	}
+
+	return scanBody
 }
 
 // scanRequestSep scans the literal '###' request separator. No '#'
@@ -462,6 +479,77 @@ func scanHTTPVersion(s *Scanner) scanFn {
 	}
 
 	s.emit(token.HTTPVersion)
+	if s.char() == '\n' {
+		s.advance()
+		s.start = s.pos
+	}
+
+	// The only things that can follow a http version
+	// are headers or a body
+	if isAlpha(s.char()) {
+		return scanHeaders
+	}
+
+	s.skip(unicode.IsSpace)
+	return scanBody
+}
+
+// scanHeaders scans 1 or more header lines, emitting the right tokens as it goes.
+//
+// It stops when it hits "###", "\n\n" or eof. The first marks the next request
+// in the file, the second is the body separator and obviously eof is eof.
+func scanHeaders(s *Scanner) scanFn {
+	for isIdent(s.char()) {
+		s.advance()
+	}
+
+	if s.char() == eof {
+		s.error("unexpected eof")
+		return nil
+	}
+
+	s.emit(token.Header)
+
+	if s.char() == ':' {
+		s.advance()
+		s.emit(token.Colon)
+	}
+
+	// The value is anything to the end of the line
+	s.skip(isLineSpace)
+	for s.char() != '\n' && s.char() != eof {
+		s.advance()
+	}
+
+	s.emit(token.Text)
+
+	// Bodies are separated from headers by two newlines
+	if s.char() == '\n' && s.peek() == '\n' {
+		s.skip(unicode.IsSpace)
+		return scanBody
+	}
+
+	s.skip(unicode.IsSpace)
+	if isAlpha(s.char()) {
+		// Another header, call itself again
+		return scanHeaders
+	}
+
+	return scanStart
+}
+
+// scanBody scans a request body which is defined as anything up to
+// the next request delimiter, a '--boundary--', or eof.
+func scanBody(s *Scanner) scanFn {
+	if s.char() == eof {
+		return scanStart
+	}
+
+	for !bytes.HasPrefix(s.rest(), []byte("###")) && !bytes.HasPrefix(s.rest(), []byte("--")) && s.char() != eof {
+		s.advance()
+	}
+
+	s.emit(token.Body)
 	s.skip(unicode.IsSpace)
 	return scanStart
 }

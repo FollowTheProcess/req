@@ -14,26 +14,28 @@ func _() {
 	_ = x[Text-3]
 	_ = x[Number-4]
 	_ = x[URL-5]
-	_ = x[Ident-6]
-	_ = x[RequestSeparator-7]
-	_ = x[At-8]
-	_ = x[Eq-9]
-	_ = x[Colon-10]
-	_ = x[HTTPVersion-11]
-	_ = x[MethodGet-12]
-	_ = x[MethodHead-13]
-	_ = x[MethodPost-14]
-	_ = x[MethodPut-15]
-	_ = x[MethodDelete-16]
-	_ = x[MethodConnect-17]
-	_ = x[MethodPatch-18]
-	_ = x[MethodOptions-19]
-	_ = x[MethodTrace-20]
+	_ = x[Header-6]
+	_ = x[Body-7]
+	_ = x[Ident-8]
+	_ = x[RequestSeparator-9]
+	_ = x[At-10]
+	_ = x[Eq-11]
+	_ = x[Colon-12]
+	_ = x[HTTPVersion-13]
+	_ = x[MethodGet-14]
+	_ = x[MethodHead-15]
+	_ = x[MethodPost-16]
+	_ = x[MethodPut-17]
+	_ = x[MethodDelete-18]
+	_ = x[MethodConnect-19]
+	_ = x[MethodPatch-20]
+	_ = x[MethodOptions-21]
+	_ = x[MethodTrace-22]
 }
 
-const _Kind_name = "EOFErrorCommentTextNumberURLIdentRequestSeparatorAtEqColonHTTPVersionMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTrace"
+const _Kind_name = "EOFErrorCommentTextNumberURLHeaderBodyIdentRequestSeparatorAtEqColonHTTPVersionMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTrace"
 
-var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 25, 28, 33, 49, 51, 53, 58, 69, 78, 88, 98, 107, 119, 132, 143, 156, 167}
+var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 25, 28, 34, 38, 43, 59, 61, 63, 68, 79, 88, 98, 108, 117, 129, 142, 153, 166, 177}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {
