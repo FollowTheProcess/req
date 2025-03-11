@@ -532,6 +532,8 @@ func scanHeaders(s *Scanner) scanFn {
 // scanBody scans a request body which is defined as anything up to
 // the next request delimiter, a '--boundary--', or eof.
 func scanBody(s *Scanner) scanFn {
+	// TODO(@FollowTheProcess): Handle multipart --boundary--
+	// TODO(@FollowTheProcess): Handle < ./body.json
 	if s.char() == eof {
 		return scanStart
 	}
