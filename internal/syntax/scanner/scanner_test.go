@@ -375,9 +375,8 @@ func TestScanBasics(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := strings.NewReader(tt.src)
-			scanner, err := scanner.New(tt.name, r, testFailHandler(t))
-			test.Ok(t, err)
+			src := []byte(tt.src)
+			scanner := scanner.New(tt.name, src, testFailHandler(t))
 
 			var tokens []token.Token
 			for {
@@ -410,8 +409,7 @@ func TestValid(t *testing.T) {
 			want, ok := archive.Read("tokens.txt")
 			test.True(t, ok, test.Context("archive missing tokens.txt"))
 
-			scanner, err := scanner.New(name, strings.NewReader(src), testFailHandler(t))
-			test.Ok(t, err)
+			scanner := scanner.New(name, []byte(src), testFailHandler(t))
 
 			var tokens []token.Token
 			for {
@@ -467,8 +465,7 @@ func FuzzScanner(f *testing.F) {
 		// Note: no ErrorHandler installed, because if we let the scanner report syntax
 		// errors it would kill the fuzz test straight away e.g. on the first invalid
 		// utf-8 char
-		scanner, err := scanner.New("fuzz", strings.NewReader(src), nil)
-		test.Ok(t, err)
+		scanner := scanner.New("fuzz", []byte(src), nil)
 
 		for {
 			tok := scanner.Scan()
@@ -492,10 +489,7 @@ func BenchmarkScanner(b *testing.B) {
 	test.True(b, ok, test.Context("src.http not in %s", file))
 
 	for b.Loop() {
-		scanner, err := scanner.New("bench", strings.NewReader(src), testFailHandler(b))
-		if err != nil {
-			b.Fatal(err)
-		}
+		scanner := scanner.New("bench", []byte(src), testFailHandler(b))
 
 		for {
 			tok := scanner.Scan()
