@@ -483,6 +483,29 @@ func FuzzScanner(f *testing.F) {
 	})
 }
 
+func BenchmarkScanner(b *testing.B) {
+	file := filepath.Join("testdata", "valid", "full2.txtar")
+	archive, err := txtar.ParseFile(file)
+	test.Ok(b, err)
+
+	src, ok := archive.Read("src.http")
+	test.True(b, ok, test.Context("src.http not in %s", file))
+
+	for b.Loop() {
+		scanner, err := scanner.New("bench", strings.NewReader(src), testFailHandler(b))
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		for {
+			tok := scanner.Scan()
+			if tok.Kind == token.EOF {
+				break
+			}
+		}
+	}
+}
+
 // testFailHandler returns a [syntax.ErrorHandler] that handles scanning errors by failing
 // the enclosing test.
 func testFailHandler(tb testing.TB) syntax.ErrorHandler {
