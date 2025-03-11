@@ -324,8 +324,7 @@ func scanURL(s *Scanner) scanFn {
 
 	// If there is now characters and not another newline, it should be request headers
 	if isAlpha(s.char()) {
-		// TODO(@FollowTheProcess): Now we know these are headers, we could specialise
-		return scanStart
+		return scanHeaders
 	}
 
 	// Otherwise it's either a body or another request
@@ -481,6 +480,50 @@ func scanHTTPVersion(s *Scanner) scanFn {
 
 	s.emit(token.HTTPVersion)
 	s.skip(unicode.IsSpace)
+	return scanStart
+}
+
+// scanHeaders scans 1 or more header lines, emitting the right tokens as it goes.
+//
+// It stops when it hits "###", "\n\n" or eof. The first marks the next request
+// in the file, the second is the body separator and obviously eof is eof.
+func scanHeaders(s *Scanner) scanFn {
+	for isIdent(s.char()) {
+		s.advance()
+	}
+
+	if s.char() == eof {
+		s.error("unexpected eof")
+		return nil
+	}
+
+	s.emit(token.Header)
+
+	if s.char() == ':' {
+		s.advance()
+		s.emit(token.Colon)
+	}
+
+	// The value is anything to the end of the line
+	s.skip(isLineSpace)
+	for s.char() != '\n' && s.char() != eof {
+		s.advance()
+	}
+
+	s.emit(token.Text)
+
+	// Bodies are separated from headers by two newlines
+	if s.char() == '\n' && s.peek() == '\n' {
+		s.skip(unicode.IsSpace)
+		return scanBody
+	}
+
+	s.skip(unicode.IsSpace)
+	if isAlpha(s.char()) {
+		// Another header, call itself again
+		return scanHeaders
+	}
+
 	return scanStart
 }
 

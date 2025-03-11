@@ -14,6 +14,7 @@ const (
 	Text                         // Text
 	Number                       // Number
 	URL                          // URL
+	Header                       // Header
 	Body                         // Body
 	Ident                        // Ident
 	RequestSeparator             // RequestSeparator
