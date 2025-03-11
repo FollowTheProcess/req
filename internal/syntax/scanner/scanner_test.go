@@ -483,7 +483,7 @@ func FuzzScanner(f *testing.F) {
 	})
 }
 
-// testFailHandler returns a [scanner.ErrorHandler] that handles scanning errors by failing
+// testFailHandler returns a [syntax.ErrorHandler] that handles scanning errors by failing
 // the enclosing test.
 func testFailHandler(tb testing.TB) syntax.ErrorHandler {
 	tb.Helper()
