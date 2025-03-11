@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	eof = rune(-1) // eof signifies we have reached the end of the input
+	bufferSize = 32       // Benchmarking suggests this as the best token buffer size
+	eof        = rune(-1) // eof signifies we have reached the end of the input
 )
 
 // scanFn represents the state of the scanner as a function that returns the next state.
@@ -40,11 +41,9 @@ func New(name string, r io.Reader, handler syntax.ErrorHandler) (*Scanner, error
 		return nil, fmt.Errorf("could not read from input: %w", err)
 	}
 
-	// TODO(@FollowTheProcess): Benchmark to find the right buffer size for the channel
-
 	s := &Scanner{
 		handler: handler,
-		tokens:  make(chan token.Token),
+		tokens:  make(chan token.Token, bufferSize),
 		name:    name,
 		src:     src,
 		start:   0,
