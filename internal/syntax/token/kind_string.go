@@ -21,21 +21,23 @@ func _() {
 	_ = x[At-10]
 	_ = x[Eq-11]
 	_ = x[Colon-12]
-	_ = x[HTTPVersion-13]
-	_ = x[MethodGet-14]
-	_ = x[MethodHead-15]
-	_ = x[MethodPost-16]
-	_ = x[MethodPut-17]
-	_ = x[MethodDelete-18]
-	_ = x[MethodConnect-19]
-	_ = x[MethodPatch-20]
-	_ = x[MethodOptions-21]
-	_ = x[MethodTrace-22]
+	_ = x[LeftAngle-13]
+	_ = x[RightAngle-14]
+	_ = x[HTTPVersion-15]
+	_ = x[MethodGet-16]
+	_ = x[MethodHead-17]
+	_ = x[MethodPost-18]
+	_ = x[MethodPut-19]
+	_ = x[MethodDelete-20]
+	_ = x[MethodConnect-21]
+	_ = x[MethodPatch-22]
+	_ = x[MethodOptions-23]
+	_ = x[MethodTrace-24]
 }
 
-const _Kind_name = "EOFErrorCommentTextNumberURLHeaderBodyIdentRequestSeparatorAtEqColonHTTPVersionMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTrace"
+const _Kind_name = "EOFErrorCommentTextNumberURLHeaderBodyIdentRequestSeparatorAtEqColonLeftAngleRightAngleHTTPVersionMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTrace"
 
-var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 25, 28, 34, 38, 43, 59, 61, 63, 68, 79, 88, 98, 108, 117, 129, 142, 153, 166, 177}
+var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 25, 28, 34, 38, 43, 59, 61, 63, 68, 77, 87, 98, 107, 117, 127, 136, 148, 161, 172, 185, 196}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {

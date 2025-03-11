@@ -383,7 +383,7 @@ func TestScanBasics(t *testing.T) {
 			for {
 				tok := scanner.Scan()
 				tokens = append(tokens, tok)
-				if tok.Kind == token.EOF {
+				if tok.Kind == token.EOF || tok.Kind == token.Error {
 					break
 				}
 			}
@@ -417,7 +417,7 @@ func TestValid(t *testing.T) {
 			for {
 				tok := scanner.Scan()
 				tokens = append(tokens, tok)
-				if tok.Kind == token.EOF {
+				if tok.Kind == token.EOF || tok.Kind == token.Error {
 					break
 				}
 			}
@@ -499,7 +499,7 @@ func BenchmarkScanner(b *testing.B) {
 
 		for {
 			tok := scanner.Scan()
-			if tok.Kind == token.EOF {
+			if tok.Kind == token.EOF || tok.Kind == token.Error {
 				break
 			}
 		}

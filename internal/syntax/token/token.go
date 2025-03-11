@@ -21,6 +21,8 @@ const (
 	At                           // At
 	Eq                           // Eq
 	Colon                        // Colon
+	LeftAngle                    // LeftAngle
+	RightAngle                   // RightAngle
 	HTTPVersion                  // HTTPVersion
 	MethodGet                    // MethodGet
 	MethodHead                   // MethodHead

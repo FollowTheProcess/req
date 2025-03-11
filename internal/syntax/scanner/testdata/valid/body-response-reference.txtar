@@ -1,0 +1,14 @@
+-- src.http --
+### Body File
+POST https://api.somewhere.com/items/1
+
+<> previous-response.200.json
+-- tokens.txt --
+<Token::RequestSeparator start=0, end=3>
+<Token::Text start=4, end=13>
+<Token::MethodPost start=14, end=18>
+<Token::URL start=19, end=52>
+<Token::LeftAngle start=54, end=55>
+<Token::RightAngle start=55, end=56>
+<Token::Text start=57, end=83>
+<Token::EOF start=84, end=84>
