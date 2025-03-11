@@ -479,8 +479,19 @@ func scanHTTPVersion(s *Scanner) scanFn {
 	}
 
 	s.emit(token.HTTPVersion)
+	if s.char() == '\n' {
+		s.advance()
+		s.start = s.pos
+	}
+
+	// The only things that can follow a http version
+	// are headers or a body
+	if isAlpha(s.char()) {
+		return scanHeaders
+	}
+
 	s.skip(unicode.IsSpace)
-	return scanStart
+	return scanBody
 }
 
 // scanHeaders scans 1 or more header lines, emitting the right tokens as it goes.

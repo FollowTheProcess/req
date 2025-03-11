@@ -1,0 +1,51 @@
+-- src.http --
+###
+@name Everything
+@timeout 30s
+@no-redirect
+PUT https://api.somewhere.com/items/1 HTTP/2
+Content-Type: application/json
+Accept: application/json
+X-Something-Else: yes
+Authorization: Bearer {{token}}
+
+{
+  "some": "stuff",
+  "here": [
+    "arbitrary",
+    "json",
+  ],
+  "is_allowed": {
+    "including": "nested": {
+      "objects": ["yes"]
+    }
+  }
+}
+-- tokens.txt --
+<Token::RequestSeparator start=0, end=3>
+<Token::At start=4, end=5>
+<Token::Ident start=5, end=9>
+<Token::Text start=10, end=20>
+<Token::At start=21, end=22>
+<Token::Ident start=22, end=29>
+<Token::Number start=30, end=32>
+<Token::Text start=32, end=33>
+<Token::At start=34, end=35>
+<Token::Ident start=35, end=46>
+<Token::MethodPut start=47, end=50>
+<Token::URL start=51, end=84>
+<Token::HTTPVersion start=85, end=91>
+<Token::Header start=92, end=104>
+<Token::Colon start=104, end=105>
+<Token::Text start=106, end=122>
+<Token::Header start=123, end=129>
+<Token::Colon start=129, end=130>
+<Token::Text start=131, end=147>
+<Token::Header start=148, end=164>
+<Token::Colon start=164, end=165>
+<Token::Text start=166, end=169>
+<Token::Header start=170, end=183>
+<Token::Colon start=183, end=184>
+<Token::Text start=185, end=201>
+<Token::Body start=203, end=354>
+<Token::EOF start=354, end=354>
