@@ -42,6 +42,16 @@ func New(name string, r io.Reader, handler syntax.ErrorHandler) (*Parser, error)
 	return p, nil
 }
 
+// Parse parses the file to completion returning a [syntax.File] and any parsing
+// errors encountered.
+//
+// The returned error will simply signify whether or not there were parse errors,
+// the error handler passed to [New] should be preferred.
+func (p *Parser) Parse() (syntax.File, error) {
+	// TODO(@FollowTheProcess): This
+	return syntax.File{}, nil
+}
+
 // advance advances the parser by a single token.
 func (p *Parser) advance() {
 	p.current = p.next
