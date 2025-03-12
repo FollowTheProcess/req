@@ -1,0 +1,17 @@
+-- src.http --
+### Response Reference
+GET https://api.somewhere.com/items/1
+
+<> ./previous.200.json
+-- want.json --
+{
+  "name": "response-reference.txtar",
+  "requests": [
+    {
+      "name": "Response Reference",
+      "method": "GET",
+      "url": "https://api.somewhere.com/items/1",
+      "responseRef": "./previous.200.json"
+    }
+  ]
+}

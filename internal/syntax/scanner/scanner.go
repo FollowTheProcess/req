@@ -193,6 +193,8 @@ func scanStart(s *Scanner) scanFn {
 		return scanEq
 	case ':':
 		return scanColon
+	case '<':
+		return scanLeftAngle
 	default:
 		switch {
 		case bytes.HasPrefix(s.rest(), []byte("HTTP")):
