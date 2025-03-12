@@ -62,7 +62,7 @@ func (p *Parser) Parse() (syntax.File, error) {
 	// TODO(@FollowTheProcess): Parse global vars at the top of the file
 
 	// Everything else should just be parsing requests
-	for p.current.Kind != token.EOF {
+	for p.current.Kind != token.EOF && p.current.Kind != token.Error {
 		request := p.parseRequest()
 		// If it's name is missing, name it after its position in the file (1 indexed)
 		if request.Name == "" {
@@ -201,9 +201,41 @@ func (p *Parser) parseRequest() syntax.Request {
 		request.Headers[key] = value
 	}
 
-	// TODO(@FollowTheProcess): Only things allowed now are:
+	// Only things allowed now are:
 	// - Body (in which case request.Body gets the raw bytes)
 	// - LeftAngle (in which case the next thing must be Text and is BodyFile)
+	// - LeftAngle then RightAngle (in which case it's a response reference)
+	if p.next.Kind == token.Body {
+		p.advance()
+		request.Body = p.src[p.current.Start:p.current.End]
+	}
+
+	// Might be a < ./input.json in a POST request
+	// Or it could be a <> ./previous.200.json in a request with no body
+	if p.next.Kind == token.LeftAngle {
+		p.advance()
+		if p.next.Kind == token.RightAngle {
+			p.advance()
+			p.expect(token.Text)
+			request.ResponseRef = p.text()
+		} else {
+			p.expect(token.Text)
+			request.BodyFile = p.text()
+		}
+	}
+
+	// We have to check for the <> ./previous.200.json case again in case
+	// the body was set with < ./input.json *and* we want a response reference
+	if p.next.Kind == token.LeftAngle {
+		p.advance()
+		p.expect(token.RightAngle)
+		p.expect(token.Text)
+		request.ResponseRef = p.text()
+	}
+
+	if request.Body != nil && request.BodyFile != "" {
+		p.error("cannot have both an inline body and an input body file")
+	}
 
 	return request
 }

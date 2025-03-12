@@ -193,6 +193,8 @@ func scanStart(s *Scanner) scanFn {
 		return scanEq
 	case ':':
 		return scanColon
+	case '<':
+		return scanLeftAngle
 	default:
 		switch {
 		case bytes.HasPrefix(s.rest(), []byte("HTTP")):
@@ -282,6 +284,10 @@ func scanText(s *Scanner) scanFn {
 // scanURL scans a URL, which for now we assume is anything that isn't
 // whitespace.
 func scanURL(s *Scanner) scanFn {
+	// TODO(@FollowTheProcess): Can we handle arbitrary whitespace in a URL?
+	// If so we could support the multiline URL thing from the spec which currently
+	// we don't. The parser would just remove all whitespace from the URL before
+	// storing it in the structure.
 	for !unicode.IsSpace(s.char()) && s.char() != eof {
 		s.next()
 	}
@@ -520,7 +526,9 @@ func scanHeaders(s *Scanner) scanFn {
 // scanBody scans a request body which is defined as anything up to
 // the next request delimiter, a '--boundary--', or eof.
 func scanBody(s *Scanner) scanFn {
-	// TODO(@FollowTheProcess): Handle multipart --boundary--
+	// TODO(@FollowTheProcess): Handle multipart --boundary--, it's actually tricky
+	// because the boundary could be any arbitrary text. I guess we just scan '--'
+	// then Text then another '--' and let the parser deal with it?
 	if s.char() == eof {
 		return scanStart
 	}

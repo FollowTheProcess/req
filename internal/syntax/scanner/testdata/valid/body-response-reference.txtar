@@ -1,14 +1,22 @@
 -- src.http --
-### Body File
+### Response Reference
 POST https://api.somewhere.com/items/1
+Content-Type: application/json
 
-<> previous-response.200.json
+< ./input.json
+
+<> ./previous.200.json
 -- tokens.txt --
 <Token::RequestSeparator start=0, end=3>
-<Token::Text start=4, end=13>
-<Token::MethodPost start=14, end=18>
-<Token::URL start=19, end=52>
-<Token::LeftAngle start=54, end=55>
-<Token::RightAngle start=55, end=56>
-<Token::Text start=57, end=83>
-<Token::EOF start=84, end=84>
+<Token::Text start=4, end=22>
+<Token::MethodPost start=23, end=27>
+<Token::URL start=28, end=61>
+<Token::Header start=62, end=74>
+<Token::Colon start=74, end=75>
+<Token::Text start=76, end=92>
+<Token::LeftAngle start=94, end=95>
+<Token::Text start=96, end=108>
+<Token::LeftAngle start=110, end=111>
+<Token::RightAngle start=111, end=112>
+<Token::Text start=113, end=132>
+<Token::EOF start=133, end=133>

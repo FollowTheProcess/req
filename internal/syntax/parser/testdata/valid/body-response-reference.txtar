@@ -1,0 +1,24 @@
+-- src.http --
+### Response Reference
+POST https://api.somewhere.com/items/1
+Content-Type: application/json
+
+< ./input.json
+
+<> ./previous.200.json
+-- want.json --
+{
+  "name": "body-response-reference.txtar",
+  "requests": [
+    {
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "name": "Response Reference",
+      "method": "POST",
+      "url": "https://api.somewhere.com/items/1",
+      "bodyFile": "./input.json",
+      "responseRef": "./previous.200.json"
+    }
+  ]
+}
