@@ -59,6 +59,35 @@ func TestParseValid(t *testing.T) {
 	}
 }
 
+func FuzzParser(f *testing.F) {
+	// Get all the .http source from testdata for the corpus
+	pattern := filepath.Join("testdata", "valid", "*.txtar")
+	files, err := filepath.Glob(pattern)
+	test.Ok(f, err)
+
+	for _, file := range files {
+		archive, err := txtar.ParseFile(file)
+		test.Ok(f, err)
+
+		src, ok := archive.Read("src.http")
+		test.True(f, ok, test.Context("file %s does not contain 'src.http'", file))
+
+		f.Add(src)
+	}
+
+	// Property: The parser never panics or loops indefinitely, fuzz by default
+	// will catch both of these
+	f.Fuzz(func(t *testing.T, src string) {
+		// Note: no ErrorHandler installed, because if we let it report errors
+		// it would kill the fuzz test straight away e.g. on the first invalid
+		// utf-8 char
+		parser, err := parser.New("fuzz", strings.NewReader(src), nil)
+		test.Ok(t, err)
+
+		_, _ = parser.Parse()
+	})
+}
+
 // testFailHandler returns a [syntax.ErrorHandler] that handles scanning errors by failing
 // the enclosing test.
 func testFailHandler(tb testing.TB) syntax.ErrorHandler {
