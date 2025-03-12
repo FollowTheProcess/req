@@ -72,6 +72,10 @@ func (p *Parser) Parse() (syntax.File, error) {
 		p.advance()
 	}
 
+	if p.hadErrors {
+		return syntax.File{}, ErrParse
+	}
+
 	return file, nil
 }
 

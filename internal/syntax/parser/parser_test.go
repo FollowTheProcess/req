@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -84,7 +85,16 @@ func FuzzParser(f *testing.F) {
 		parser, err := parser.New("fuzz", strings.NewReader(src), nil)
 		test.Ok(t, err)
 
-		_, _ = parser.Parse()
+		file, err := parser.Parse()
+
+		var zeroFile syntax.File
+
+		// Property: If the parser returned an error, then file must be empty
+		if err != nil {
+			if !reflect.DeepEqual(file, zeroFile) {
+				t.Fatalf("\nnon zero syntax.File returned when err != nil: %#v\n", file)
+			}
+		}
 	})
 }
 
