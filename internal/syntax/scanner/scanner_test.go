@@ -12,6 +12,7 @@ import (
 	"github.com/FollowTheProcess/req/internal/syntax/token"
 	"github.com/FollowTheProcess/test"
 	"github.com/FollowTheProcess/txtar"
+	"go.uber.org/goleak"
 )
 
 var update = flag.Bool("update", false, "Update snapshots and testdata")
@@ -375,6 +376,7 @@ func TestScanBasics(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			defer goleak.VerifyNone(t)
 			src := []byte(tt.src)
 			scanner := scanner.New(tt.name, src, testFailHandler(t))
 
@@ -400,6 +402,7 @@ func TestValid(t *testing.T) {
 	for _, file := range files {
 		name := filepath.Base(file)
 		t.Run(name, func(t *testing.T) {
+			defer goleak.VerifyNone(t)
 			archive, err := txtar.ParseFile(file)
 			test.Ok(t, err)
 

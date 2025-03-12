@@ -73,3 +73,8 @@ func Method(text string) (kind Kind, ok bool) {
 		return Text, false
 	}
 }
+
+// IsMethod reports whether the given kind is a HTTP Method.
+func IsMethod(kind Kind) bool {
+	return kind >= MethodGet && kind <= MethodTrace
+}

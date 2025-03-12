@@ -5,6 +5,7 @@ go 1.24
 require (
 	github.com/FollowTheProcess/test v0.20.3
 	github.com/FollowTheProcess/txtar v0.7.0
+	go.uber.org/goleak v1.3.0
 )
 
 require (

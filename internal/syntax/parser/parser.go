@@ -160,41 +160,50 @@ func (p *Parser) text() string {
 
 // parseRequest parses a single request in a http file.
 func (p *Parser) parseRequest() syntax.Request {
-	request := syntax.Request{
-		Headers: make(map[string]string),
-	}
-
 	if p.current.Kind != token.RequestSeparator {
 		p.errorf("expected %s, got %s", token.RequestSeparator, p.current.Kind)
 		return syntax.Request{}
 	}
 
-	switch p.next.Kind {
-	case token.Text:
-		// If it's Text, it's the request's name (comment)
-		// TODO(@FollowTheProcess): What do we do if there's a @name later on?
-		p.advance() // It's now p.current
+	request := syntax.Request{
+		Headers: make(map[string]string),
+	}
+
+	// Does it have a name as in "### {name}"
+	if p.next.Kind == token.Text {
+		p.advance()
 		request.Name = p.text()
-	case token.MethodGet,
-		token.MethodHead,
-		token.MethodPost,
-		token.MethodPut,
-		token.MethodDelete,
-		token.MethodConnect,
-		token.MethodPatch,
-		token.MethodOptions,
-		token.MethodTrace:
-		// The only other things it's allowed to be is a method
-		p.advance()
-		request.Method = p.text()
-	default:
-		p.errorf("requests must be followed by either a name or a HTTP method, got %s", p.next.Kind)
-		p.advance()
+	}
+
+	if !token.IsMethod(p.next.Kind) {
+		p.errorf("request separators must be followed by either a name or a HTTP method, got %s", p.next.Kind)
 		return syntax.Request{}
 	}
 
+	p.advance()
+	request.Method = p.text()
+
 	p.expect(token.URL)
 	request.URL = p.text()
+
+	if p.next.Kind == token.HTTPVersion {
+		p.advance()
+		request.HTTPVersion = p.text()
+	}
+
+	// Parse any headers
+	for p.next.Kind == token.Header {
+		p.advance()
+		key := p.text()
+		p.expect(token.Colon)
+		p.expect(token.Text)
+		value := p.text()
+		request.Headers[key] = value
+	}
+
+	// TODO(@FollowTheProcess): Only things allowed now are:
+	// - Body (in which case request.Body gets the raw bytes)
+	// - LeftAngle (in which case the next thing must be Text and is BodyFile)
 
 	return request
 }
