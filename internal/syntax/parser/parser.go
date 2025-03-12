@@ -2,6 +2,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -10,14 +11,19 @@ import (
 	"github.com/FollowTheProcess/req/internal/syntax/token"
 )
 
+// ErrParse is a generic parsing error, details on the error are passed
+// to the parsers [syntax.ErrorHandler] at the moment it occurs.
+var ErrParse = errors.New("parse error")
+
 // Parser is the http file parser.
 type Parser struct {
-	handler syntax.ErrorHandler // The error handler
-	scanner *scanner.Scanner    // Scanner to generate tokens
-	name    string              // Name of the file being parsed
-	src     []byte              // Raw source text
-	current token.Token         // Current token under inspection
-	next    token.Token         // Next token in the stream
+	handler   syntax.ErrorHandler // The error handler
+	scanner   *scanner.Scanner    // Scanner to generate tokens
+	name      string              // Name of the file being parsed
+	src       []byte              // Raw source text
+	current   token.Token         // Current token under inspection
+	next      token.Token         // Next token in the stream
+	hadErrors bool                // Whether we encountered parse errors
 }
 
 // New returns a new [Parser].
@@ -48,14 +54,45 @@ func New(name string, r io.Reader, handler syntax.ErrorHandler) (*Parser, error)
 // The returned error will simply signify whether or not there were parse errors,
 // the error handler passed to [New] should be preferred.
 func (p *Parser) Parse() (syntax.File, error) {
-	// TODO(@FollowTheProcess): This
-	return syntax.File{}, nil
+	file := syntax.File{
+		Name: p.name,
+		Vars: make(map[string]string),
+	}
+
+	// TODO(@FollowTheProcess): Parse global vars at the top of the file
+
+	// Everything else should just be parsing requests
+	for p.current.Kind != token.EOF {
+		request := p.parseRequest()
+		// If it's name is missing, name it after its position in the file (1 indexed)
+		if request.Name == "" {
+			request.Name = fmt.Sprintf("#%d", 1+len(file.Requests))
+		}
+		file.Requests = append(file.Requests, request)
+		p.advance()
+	}
+
+	return file, nil
 }
 
 // advance advances the parser by a single token.
 func (p *Parser) advance() {
 	p.current = p.next
 	p.next = p.scanner.Scan()
+}
+
+// expect asserts that the next token is of a particular kind, causing a syntax error
+// if not.
+//
+// If the next token is as expected, expect advances the parser onto that token so
+// that it is now p.current.
+func (p *Parser) expect(kind token.Kind) {
+	if p.next.Kind != kind {
+		p.errorf("expected %s, got %s", kind, p.next.Kind)
+		return
+	}
+
+	p.advance()
 }
 
 // position returns the parser's current position in the input as a [syntax.Position].
@@ -108,9 +145,56 @@ func (p *Parser) error(msg string) {
 	}
 
 	p.handler(p.position(), msg)
+	p.hadErrors = true
 }
 
 // errorf calls error with a formatted message.
 func (p *Parser) errorf(format string, a ...any) {
 	p.error(fmt.Sprintf(format, a...))
+}
+
+// text returns the chunk of source text described by the p.current token.
+func (p *Parser) text() string {
+	return string(p.src[p.current.Start:p.current.End])
+}
+
+// parseRequest parses a single request in a http file.
+func (p *Parser) parseRequest() syntax.Request {
+	request := syntax.Request{
+		Headers: make(map[string]string),
+	}
+
+	if p.current.Kind != token.RequestSeparator {
+		p.errorf("expected %s, got %s", token.RequestSeparator, p.current.Kind)
+		return syntax.Request{}
+	}
+
+	switch p.next.Kind {
+	case token.Text:
+		// If it's Text, it's the request's name (comment)
+		// TODO(@FollowTheProcess): What do we do if there's a @name later on?
+		p.advance() // It's now p.current
+		request.Name = p.text()
+	case token.MethodGet,
+		token.MethodHead,
+		token.MethodPost,
+		token.MethodPut,
+		token.MethodDelete,
+		token.MethodConnect,
+		token.MethodPatch,
+		token.MethodOptions,
+		token.MethodTrace:
+		// The only other things it's allowed to be is a method
+		p.advance()
+		request.Method = p.text()
+	default:
+		p.errorf("requests must be followed by either a name or a HTTP method, got %s", p.next.Kind)
+		p.advance()
+		return syntax.Request{}
+	}
+
+	p.expect(token.URL)
+	request.URL = p.text()
+
+	return request
 }
