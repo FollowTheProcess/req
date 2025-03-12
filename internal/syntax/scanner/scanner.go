@@ -526,7 +526,9 @@ func scanHeaders(s *Scanner) scanFn {
 // scanBody scans a request body which is defined as anything up to
 // the next request delimiter, a '--boundary--', or eof.
 func scanBody(s *Scanner) scanFn {
-	// TODO(@FollowTheProcess): Handle multipart --boundary--
+	// TODO(@FollowTheProcess): Handle multipart --boundary--, it's actually tricky
+	// because the boundary could be any arbitrary text. I guess we just scan '--'
+	// then Text then another '--' and let the parser deal with it?
 	if s.char() == eof {
 		return scanStart
 	}
