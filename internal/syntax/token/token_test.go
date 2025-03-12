@@ -48,3 +48,42 @@ func TestMethod(t *testing.T) {
 		})
 	}
 }
+
+func TestIsMethod(t *testing.T) {
+	tests := []struct {
+		kind token.Kind // Kind under test
+		want bool       // Expected IsMethod return value
+	}{
+		{kind: token.MethodGet, want: true},
+		{kind: token.MethodHead, want: true},
+		{kind: token.MethodPost, want: true},
+		{kind: token.MethodPut, want: true},
+		{kind: token.MethodDelete, want: true},
+		{kind: token.MethodConnect, want: true},
+		{kind: token.MethodPatch, want: true},
+		{kind: token.MethodOptions, want: true},
+		{kind: token.MethodTrace, want: true},
+		{kind: token.EOF, want: false},
+		{kind: token.Error, want: false},
+		{kind: token.Comment, want: false},
+		{kind: token.Text, want: false},
+		{kind: token.Number, want: false},
+		{kind: token.URL, want: false},
+		{kind: token.Header, want: false},
+		{kind: token.Body, want: false},
+		{kind: token.Ident, want: false},
+		{kind: token.RequestSeparator, want: false},
+		{kind: token.At, want: false},
+		{kind: token.Eq, want: false},
+		{kind: token.Colon, want: false},
+		{kind: token.LeftAngle, want: false},
+		{kind: token.RightAngle, want: false},
+		{kind: token.HTTPVersion, want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.kind.String(), func(t *testing.T) {
+			test.Equal(t, token.IsMethod(tt.kind), tt.want, test.Context("IsMethod(%s) mismatch", tt.kind))
+		})
+	}
+}

@@ -1,0 +1,15 @@
+-- src.http --
+### My Request
+GET https://api.somewhere.com/items/1 HTTP/2
+-- want.json --
+{
+  "name": "http-version.txtar",
+  "requests": [
+    {
+      "name": "My Request",
+      "method": "GET",
+      "url": "https://api.somewhere.com/items/1",
+      "httpVersion": "HTTP/2"
+    }
+  ]
+}

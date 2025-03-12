@@ -4,7 +4,6 @@ package scanner
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"unicode"
 	"unicode/utf8"
 
@@ -34,13 +33,7 @@ type Scanner struct {
 }
 
 // New returns a new [Scanner] that reads from r.
-func New(name string, r io.Reader, handler syntax.ErrorHandler) (*Scanner, error) {
-	// .http files are small, it's fine to just read it in one go
-	src, err := io.ReadAll(r)
-	if err != nil {
-		return nil, fmt.Errorf("could not read from input: %w", err)
-	}
-
+func New(name string, src []byte, handler syntax.ErrorHandler) *Scanner {
 	s := &Scanner{
 		handler: handler,
 		tokens:  make(chan token.Token, bufferSize),
@@ -55,7 +48,7 @@ func New(name string, r io.Reader, handler syntax.ErrorHandler) (*Scanner, error
 	// run terminates when the scanning state machine is finished and all the tokens
 	// drained from s.tokens so no wg.Add needed here
 	go s.run()
-	return s, nil
+	return s
 }
 
 // Scan scans the input and returns the next token.
