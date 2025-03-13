@@ -1,0 +1,19 @@
+-- src.http --
+@user_id = 1234
+
+###
+GET https://users.com/api/v1/{{user_id}}
+-- want.json --
+{
+  "name": "global-number.txtar",
+  "vars": {
+    "user_id": "1234"
+  },
+  "requests": [
+    {
+      "name": "#1",
+      "method": "GET",
+      "url": "https://users.com/api/v1/{{user_id}}"
+    }
+  ]
+}

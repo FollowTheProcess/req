@@ -273,7 +273,7 @@ func scanText(s *Scanner) scanFn {
 		// GET {space but not \n} <url> [HTTP Version]
 		s.emit(kind)
 		s.skip(isLineSpace)
-		return scanStart
+		return scanURL
 	}
 
 	s.emit(kind)

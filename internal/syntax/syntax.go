@@ -69,7 +69,8 @@ func (p Position) String() string {
 // File represents a single .http file as parsed.
 //
 // It is *nearly* concrete but may have variable interpolation still to evaluate
-// in a number of fields.
+// in a number of fields, URLs may not be valid etc. This is a structured
+// populated from the as-parsed text.
 type File struct {
 	Name     string            `json:"name,omitempty"`     // Name of the file
 	Vars     map[string]string `json:"vars,omitempty"`     // Global variables defined at the top level, e.g. base url
@@ -81,7 +82,7 @@ type Request struct {
 	Headers     map[string]string `json:"headers,omitempty"`     // Request headers, may have variable interpolation in values but not keys
 	Name        string            `json:"name,omitempty"`        // Optional name, if empty request should be named after it's index e.g. "#1"
 	Method      string            `json:"method,omitempty"`      // The HTTP method e.g. "GET", "POST"
-	URL         string            `json:"url,omitempty"`         // The complete URL, may have variable interpolation e.g. {{base}}
+	URL         string            `json:"url,omitempty"`         // The complete URL, may have variable interpolation e.g. {{base}} or not be valid
 	HTTPVersion string            `json:"httpVersion,omitempty"` // Version of the HTTP protocol to use e.g. 1.2
 	BodyFile    string            `json:"bodyFile,omitempty"`    // If the body is to be populated from a local file, this is the path to that file (relative to the .http file)
 	ResponseRef string            `json:"responseRef,omitempty"` // If a response reference was provided, this is it's filepath (relative to the .http file)

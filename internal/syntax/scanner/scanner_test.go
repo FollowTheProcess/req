@@ -82,74 +82,83 @@ func TestScanBasics(t *testing.T) {
 		},
 		{
 			name: "method get",
-			src:  "GET",
+			src:  "GET https://api.github.com/repos",
 			want: []token.Token{
 				{Kind: token.MethodGet, Start: 0, End: 3},
-				{Kind: token.EOF, Start: 3, End: 3},
+				{Kind: token.URL, Start: 4, End: 32},
+				{Kind: token.EOF, Start: 32, End: 32},
 			},
 		},
 		{
 			name: "method head",
-			src:  "HEAD",
+			src:  "HEAD {{base}}/person/1",
 			want: []token.Token{
 				{Kind: token.MethodHead, Start: 0, End: 4},
-				{Kind: token.EOF, Start: 4, End: 4},
+				{Kind: token.URL, Start: 5, End: 22},
+				{Kind: token.EOF, Start: 22, End: 22},
 			},
 		},
 		{
 			name: "method post",
-			src:  "POST",
+			src:  "POST http://insecure.com/api/{{template}}/something",
 			want: []token.Token{
 				{Kind: token.MethodPost, Start: 0, End: 4},
-				{Kind: token.EOF, Start: 4, End: 4},
+				{Kind: token.URL, Start: 5, End: 51},
+				{Kind: token.EOF, Start: 51, End: 51},
 			},
 		},
 		{
 			name: "method put",
-			src:  "PUT",
+			src:  "PUT https://api.github.com/users",
 			want: []token.Token{
 				{Kind: token.MethodPut, Start: 0, End: 3},
-				{Kind: token.EOF, Start: 3, End: 3},
+				{Kind: token.URL, Start: 4, End: 32},
+				{Kind: token.EOF, Start: 32, End: 32},
 			},
 		},
 		{
 			name: "method delete",
-			src:  "DELETE",
+			src:  "DELETE {{base}}/v2/auth", // Lol delete auth okay sure
 			want: []token.Token{
 				{Kind: token.MethodDelete, Start: 0, End: 6},
-				{Kind: token.EOF, Start: 6, End: 6},
+				{Kind: token.URL, Start: 7, End: 23},
+				{Kind: token.EOF, Start: 23, End: 23},
 			},
 		},
 		{
 			name: "method connect",
-			src:  "CONNECT",
+			src:  "CONNECT https://these.com/are/hard/now",
 			want: []token.Token{
 				{Kind: token.MethodConnect, Start: 0, End: 7},
-				{Kind: token.EOF, Start: 7, End: 7},
+				{Kind: token.URL, Start: 8, End: 38},
+				{Kind: token.EOF, Start: 38, End: 38},
 			},
 		},
 		{
 			name: "method patch",
-			src:  "PATCH",
+			src:  "PATCH {{base}}/items/1",
 			want: []token.Token{
 				{Kind: token.MethodPatch, Start: 0, End: 5},
-				{Kind: token.EOF, Start: 5, End: 5},
+				{Kind: token.URL, Start: 6, End: 22},
+				{Kind: token.EOF, Start: 22, End: 22},
 			},
 		},
 		{
 			name: "method options",
-			src:  "OPTIONS",
+			src:  "OPTIONS {{base}}/items/1",
 			want: []token.Token{
 				{Kind: token.MethodOptions, Start: 0, End: 7},
-				{Kind: token.EOF, Start: 7, End: 7},
+				{Kind: token.URL, Start: 8, End: 24},
+				{Kind: token.EOF, Start: 24, End: 24},
 			},
 		},
 		{
 			name: "method trace",
-			src:  "TRACE",
+			src:  "TRACE {{base}}/orders/256",
 			want: []token.Token{
 				{Kind: token.MethodTrace, Start: 0, End: 5},
-				{Kind: token.EOF, Start: 5, End: 5},
+				{Kind: token.URL, Start: 6, End: 25},
+				{Kind: token.EOF, Start: 25, End: 25},
 			},
 		},
 		{
