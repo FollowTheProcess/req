@@ -12,6 +12,10 @@ import (
 	"github.com/FollowTheProcess/req/internal/syntax/token"
 )
 
+// TODO(@FollowTheProcess): Also handle dynamic variables that occur in {{}} blocks
+// See https://www.jetbrains.com/help/idea/exploring-http-syntax.html#dynamic-variables
+// would be fun if we could support all of these
+
 // ErrParse is a generic parsing error, details on the error are passed
 // to the parsers [syntax.ErrorHandler] at the moment it occurs.
 var ErrParse = errors.New("parse error")
@@ -172,16 +176,11 @@ func (p *Parser) parseVars() map[string]string {
 
 	vars := make(map[string]string)
 
-	// TODO(@FollowTheProcess): Make the predefined tags special like keywords, these are:
-	// @timeout = <time.Duration> (in string form)
-	// @connection-timeout = <time.Duration> (in string form)
-	// @no-redirect (no value, if it's present set the bool)
+	// TODO(@FollowTheProcess): We now have tokens for keywords like NoRedirect etc.
+	// check for those and if it's them, let's set them directly on the Request struct
+	// in their proper types e.g. time.ParseDuration
 	//
-	// Every other Ident can just be a user variable
-
-	// TODO(@FollowTheProcess): Also handle dynamic variables that occur in {{}} blocks
-	// See https://www.jetbrains.com/help/idea/exploring-http-syntax.html#dynamic-variables
-	// would be fun if we could support all of these
+	// All other idents can just go into the vars map
 
 	for p.current.Kind == token.At {
 		p.expect(token.Ident)
