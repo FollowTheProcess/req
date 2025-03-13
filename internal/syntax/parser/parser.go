@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/FollowTheProcess/req/internal/syntax"
 	"github.com/FollowTheProcess/req/internal/syntax/scanner"
@@ -56,10 +57,10 @@ func New(name string, r io.Reader, handler syntax.ErrorHandler) (*Parser, error)
 func (p *Parser) Parse() (syntax.File, error) {
 	file := syntax.File{
 		Name: p.name,
-		Vars: make(map[string]string),
 	}
 
-	// TODO(@FollowTheProcess): Parse global vars at the top of the file
+	// Parse any globals at the top of the file
+	file.Vars = p.parseVars()
 
 	// Everything else should just be parsing requests
 	for p.current.Kind != token.EOF && p.current.Kind != token.Error {
@@ -85,14 +86,13 @@ func (p *Parser) advance() {
 	p.next = p.scanner.Scan()
 }
 
-// expect asserts that the next token is of a particular kind, causing a syntax error
-// if not.
+// expect asserts that the next token is one of the given kinds, emitting a syntax error if not.
 //
-// If the next token is as expected, expect advances the parser onto that token so
-// that it is now p.current.
-func (p *Parser) expect(kind token.Kind) {
-	if p.next.Kind != kind {
-		p.errorf("expected %s, got %s", kind, p.next.Kind)
+// The parser is advanced only if the next token is of one of these kinds such that after returning
+// p.current will be one of the kinds.
+func (p *Parser) expect(kinds ...token.Kind) {
+	if !slices.Contains(kinds, p.next.Kind) {
+		p.errorf("expected one of %v, got %s", kinds, p.next.Kind)
 		return
 	}
 
@@ -162,8 +162,45 @@ func (p *Parser) text() string {
 	return string(p.src[p.current.Start:p.current.End])
 }
 
+// parseVars parses a run of variable declarations.
+//
+// If p.current is anything other than '@', parseVars returns nil.
+func (p *Parser) parseVars() map[string]string {
+	if p.current.Kind != token.At {
+		return nil
+	}
+
+	vars := make(map[string]string)
+
+	// TODO(@FollowTheProcess): Make the predefined tags special like keywords, these are:
+	// @timeout = <time.Duration> (in string form)
+	// @connection-timeout = <time.Duration> (in string form)
+	// @no-redirect (no value, if it's present set the bool)
+
+	// TODO(@FollowTheProcess): Also handle dynamic variables that occur in {{}} blocks
+	// See https://www.jetbrains.com/help/idea/exploring-http-syntax.html#dynamic-variables
+	// would be fun if we could support all of these
+
+	for p.current.Kind == token.At {
+		p.expect(token.Ident)
+		key := p.text()
+		p.expect(token.Eq)
+		p.expect(token.URL, token.Number, token.Text)
+		value := p.text()
+
+		vars[key] = value
+	}
+
+	p.advance()
+	return vars
+}
+
 // parseRequest parses a single request in a http file.
 func (p *Parser) parseRequest() syntax.Request {
+	// TODO(@FollowTheProcess): Request variables
+	// TODO(@FollowTheProcess): I think we're going to actually have to do most of the validation here
+	// as this will be the last place we have access to the raw src and position info so this is where
+	// we can point to source ranges and highlight errors.
 	if p.current.Kind != token.RequestSeparator {
 		p.errorf("expected %s, got %s", token.RequestSeparator, p.current.Kind)
 		return syntax.Request{}
@@ -187,6 +224,10 @@ func (p *Parser) parseRequest() syntax.Request {
 	p.advance()
 	request.Method = p.text()
 
+	// TODO(@FollowTheProcess): Validate URL. We need to do that in two places
+	// 1) In any global variables declaring a URL like "@base = <url>", this one must be strict and enforce an absolute URL
+	// 2) Here which could either be a full URL, or use "{{base}}/items/1", in which case, we can assume base is valid
+	// 	  as it's gone through 1, maybe substitute it here? And validate the whole thing
 	p.expect(token.URL)
 	request.URL = p.text()
 

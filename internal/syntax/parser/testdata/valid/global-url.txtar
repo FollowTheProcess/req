@@ -1,0 +1,19 @@
+-- src.http --
+@base = https://api.somewhere.com
+
+###
+GET {{base}}/items/1
+-- want.json --
+{
+  "name": "global-url.txtar",
+  "vars": {
+    "base": "https://api.somewhere.com"
+  },
+  "requests": [
+    {
+      "name": "#1",
+      "method": "GET",
+      "url": "{{base}}/items/1"
+    }
+  ]
+}
