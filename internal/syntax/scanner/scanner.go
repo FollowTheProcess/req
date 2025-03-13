@@ -386,6 +386,15 @@ func scanIdent(s *Scanner) scanFn {
 		s.next()
 	}
 
+	// Is it a keyword?
+	text := string(s.src[s.start:s.pos])
+	if kind, ok := token.Keyword(text); ok {
+		// Yes, it is
+		s.emit(kind)
+		s.skip(unicode.IsSpace)
+		return scanStart
+	}
+
 	s.emit(token.Ident)
 	s.skip(unicode.IsSpace)
 	return scanStart

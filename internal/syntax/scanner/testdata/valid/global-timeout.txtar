@@ -1,20 +1,14 @@
 -- src.http --
 @timeout = 200
-@duration = 30s
 
 ###
 GET https://api.somewhere.com/items/1
 -- tokens.txt --
 <Token::At start=0, end=1>
-<Token::Ident start=1, end=8>
+<Token::Timeout start=1, end=8>
 <Token::Eq start=9, end=10>
 <Token::Number start=11, end=14>
-<Token::At start=15, end=16>
-<Token::Ident start=16, end=24>
-<Token::Eq start=25, end=26>
-<Token::Number start=27, end=29>
-<Token::Text start=29, end=30>
-<Token::RequestSeparator start=32, end=35>
-<Token::MethodGet start=36, end=39>
-<Token::URL start=40, end=73>
-<Token::EOF start=74, end=74>
+<Token::RequestSeparator start=16, end=19>
+<Token::MethodGet start=20, end=23>
+<Token::URL start=24, end=57>
+<Token::EOF start=58, end=58>

@@ -33,11 +33,14 @@ func _() {
 	_ = x[MethodPatch-22]
 	_ = x[MethodOptions-23]
 	_ = x[MethodTrace-24]
+	_ = x[Timeout-25]
+	_ = x[ConnectionTimeout-26]
+	_ = x[NoRedirect-27]
 }
 
-const _Kind_name = "EOFErrorCommentTextNumberURLHeaderBodyIdentRequestSeparatorAtEqColonLeftAngleRightAngleHTTPVersionMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTrace"
+const _Kind_name = "EOFErrorCommentTextNumberURLHeaderBodyIdentRequestSeparatorAtEqColonLeftAngleRightAngleHTTPVersionMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTraceTimeoutConnectionTimeoutNoRedirect"
 
-var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 25, 28, 34, 38, 43, 59, 61, 63, 68, 77, 87, 98, 107, 117, 127, 136, 148, 161, 172, 185, 196}
+var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 25, 28, 34, 38, 43, 59, 61, 63, 68, 77, 87, 98, 107, 117, 127, 136, 148, 161, 172, 185, 196, 203, 220, 230}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {
