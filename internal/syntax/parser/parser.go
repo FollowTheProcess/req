@@ -176,6 +176,8 @@ func (p *Parser) parseVars() map[string]string {
 	// @timeout = <time.Duration> (in string form)
 	// @connection-timeout = <time.Duration> (in string form)
 	// @no-redirect (no value, if it's present set the bool)
+	//
+	// Everything else can just be a user variable
 
 	// TODO(@FollowTheProcess): Also handle dynamic variables that occur in {{}} blocks
 	// See https://www.jetbrains.com/help/idea/exploring-http-syntax.html#dynamic-variables
