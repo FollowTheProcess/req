@@ -191,9 +191,9 @@ func (p *Parser) parseVars() map[string]string {
 		value := p.text()
 
 		vars[key] = value
+		p.advance()
 	}
 
-	p.advance()
 	return vars
 }
 
