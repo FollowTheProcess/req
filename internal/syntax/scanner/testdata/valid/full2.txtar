@@ -27,11 +27,11 @@ Authorization: Bearer {{token}}
 <Token::Ident start=5, end=9>
 <Token::Text start=10, end=20>
 <Token::At start=21, end=22>
-<Token::Ident start=22, end=29>
+<Token::Timeout start=22, end=29>
 <Token::Number start=30, end=32>
 <Token::Text start=32, end=33>
 <Token::At start=34, end=35>
-<Token::Ident start=35, end=46>
+<Token::NoRedirect start=35, end=46>
 <Token::MethodPut start=47, end=50>
 <Token::URL start=51, end=84>
 <Token::HTTPVersion start=85, end=91>

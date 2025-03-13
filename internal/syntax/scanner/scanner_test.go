@@ -267,21 +267,21 @@ func TestScanBasics(t *testing.T) {
 		},
 		{
 			name: "at ident equal integer",
-			src:  "@timeout=20",
+			src:  "@something=20",
 			want: []token.Token{
 				{Kind: token.At, Start: 0, End: 1},
-				{Kind: token.Ident, Start: 1, End: 8},
-				{Kind: token.Eq, Start: 8, End: 9},
-				{Kind: token.Number, Start: 9, End: 11},
-				{Kind: token.EOF, Start: 11, End: 11},
+				{Kind: token.Ident, Start: 1, End: 10},
+				{Kind: token.Eq, Start: 10, End: 11},
+				{Kind: token.Number, Start: 11, End: 13},
+				{Kind: token.EOF, Start: 13, End: 13},
 			},
 		},
 		{
-			name: "at ident equal duration",
+			name: "at timeout equal duration",
 			src:  "@timeout=20s",
 			want: []token.Token{
 				{Kind: token.At, Start: 0, End: 1},
-				{Kind: token.Ident, Start: 1, End: 8},
+				{Kind: token.Timeout, Start: 1, End: 8},
 				{Kind: token.Eq, Start: 8, End: 9},
 				{Kind: token.Number, Start: 9, End: 11},
 				{Kind: token.Text, Start: 11, End: 12},
@@ -289,11 +289,11 @@ func TestScanBasics(t *testing.T) {
 			},
 		},
 		{
-			name: "at ident equal space duration",
+			name: "at timeout equal space duration",
 			src:  "@timeout=20 s",
 			want: []token.Token{
 				{Kind: token.At, Start: 0, End: 1},
-				{Kind: token.Ident, Start: 1, End: 8},
+				{Kind: token.Timeout, Start: 1, End: 8},
 				{Kind: token.Eq, Start: 8, End: 9},
 				{Kind: token.Number, Start: 9, End: 11},
 				{Kind: token.Text, Start: 12, End: 13},
@@ -301,11 +301,11 @@ func TestScanBasics(t *testing.T) {
 			},
 		},
 		{
-			name: "at ident equal duration line tail",
+			name: "at timeout equal duration line tail",
 			src:  "@timeout=20s\n",
 			want: []token.Token{
 				{Kind: token.At, Start: 0, End: 1},
-				{Kind: token.Ident, Start: 1, End: 8},
+				{Kind: token.Timeout, Start: 1, End: 8},
 				{Kind: token.Eq, Start: 8, End: 9},
 				{Kind: token.Number, Start: 9, End: 11},
 				{Kind: token.Text, Start: 11, End: 12},

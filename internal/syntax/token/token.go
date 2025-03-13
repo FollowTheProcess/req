@@ -8,31 +8,34 @@ type Kind int
 
 //go:generate stringer -type Kind -linecomment
 const (
-	EOF              Kind = iota // EOF
-	Error                        // Error
-	Comment                      // Comment
-	Text                         // Text
-	Number                       // Number
-	URL                          // URL
-	Header                       // Header
-	Body                         // Body
-	Ident                        // Ident
-	RequestSeparator             // RequestSeparator
-	At                           // At
-	Eq                           // Eq
-	Colon                        // Colon
-	LeftAngle                    // LeftAngle
-	RightAngle                   // RightAngle
-	HTTPVersion                  // HTTPVersion
-	MethodGet                    // MethodGet
-	MethodHead                   // MethodHead
-	MethodPost                   // MethodPost
-	MethodPut                    // MethodPut
-	MethodDelete                 // MethodDelete
-	MethodConnect                // MethodConnect
-	MethodPatch                  // MethodPatch
-	MethodOptions                // MethodOptions
-	MethodTrace                  // MethodTrace
+	EOF               Kind = iota // EOF
+	Error                         // Error
+	Comment                       // Comment
+	Text                          // Text
+	Number                        // Number
+	URL                           // URL
+	Header                        // Header
+	Body                          // Body
+	Ident                         // Ident
+	RequestSeparator              // RequestSeparator
+	At                            // At
+	Eq                            // Eq
+	Colon                         // Colon
+	LeftAngle                     // LeftAngle
+	RightAngle                    // RightAngle
+	HTTPVersion                   // HTTPVersion
+	MethodGet                     // MethodGet
+	MethodHead                    // MethodHead
+	MethodPost                    // MethodPost
+	MethodPut                     // MethodPut
+	MethodDelete                  // MethodDelete
+	MethodConnect                 // MethodConnect
+	MethodPatch                   // MethodPatch
+	MethodOptions                 // MethodOptions
+	MethodTrace                   // MethodTrace
+	Timeout                       // Timeout
+	ConnectionTimeout             // ConnectionTimeout
+	NoRedirect                    // NoRedirect
 )
 
 // Token is a lexical token in a .http file.
@@ -77,4 +80,24 @@ func Method(text string) (kind Kind, ok bool) {
 // IsMethod reports whether the given kind is a HTTP Method.
 func IsMethod(kind Kind) bool {
 	return kind >= MethodGet && kind <= MethodTrace
+}
+
+// Keyword reports whether a string refers to a keyword, returning it's [Kind]
+// and true if it is. Otherwise [Ident] and false are returned.
+func Keyword(text string) (kind Kind, ok bool) {
+	switch text {
+	case "timeout":
+		return Timeout, true
+	case "connection-timeout":
+		return ConnectionTimeout, true
+	case "no-redirect":
+		return NoRedirect, true
+	default:
+		return Ident, false
+	}
+}
+
+// IsKeyword reports whether the given kind is a keyword.
+func IsKeyword(kind Kind) bool {
+	return kind >= Timeout && kind <= NoRedirect
 }
