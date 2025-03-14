@@ -443,7 +443,7 @@ func TestScanBasics(t *testing.T) {
 			for {
 				tok := scanner.Scan()
 				tokens = append(tokens, tok)
-				if tok.Kind == token.EOF || tok.Kind == token.Error {
+				if tok.Kind == token.EOF {
 					break
 				}
 			}
@@ -477,7 +477,7 @@ func TestValid(t *testing.T) {
 			for {
 				tok := scanner.Scan()
 				tokens = append(tokens, tok)
-				if tok.Kind == token.EOF || tok.Kind == token.Error {
+				if tok.Kind == token.EOF {
 					break
 				}
 			}
@@ -535,7 +535,7 @@ func FuzzScanner(f *testing.F) {
 			// Property: End must be >= Start
 			test.True(t, tok.End >= tok.Start)
 
-			if tok.Kind == token.EOF || tok.Kind == token.Error {
+			if tok.Kind == token.EOF {
 				break
 			}
 		}
@@ -555,7 +555,7 @@ func BenchmarkScanner(b *testing.B) {
 
 		for {
 			tok := scanner.Scan()
-			if tok.Kind == token.EOF || tok.Kind == token.Error {
+			if tok.Kind == token.EOF {
 				break
 			}
 		}

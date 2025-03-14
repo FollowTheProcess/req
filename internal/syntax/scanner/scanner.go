@@ -212,7 +212,6 @@ func scanStart(s *Scanner) scanFn {
 			return scanText
 		default:
 			s.errorf("unexpected token %q", string(s.char()))
-			s.emit(token.Error)
 			return nil
 		}
 	}

@@ -9,38 +9,37 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[EOF-0]
-	_ = x[Error-1]
-	_ = x[Comment-2]
-	_ = x[Text-3]
-	_ = x[URL-4]
-	_ = x[Header-5]
-	_ = x[Body-6]
-	_ = x[Ident-7]
-	_ = x[RequestSeparator-8]
-	_ = x[At-9]
-	_ = x[Eq-10]
-	_ = x[Colon-11]
-	_ = x[LeftAngle-12]
-	_ = x[RightAngle-13]
-	_ = x[HTTPVersion-14]
-	_ = x[MethodGet-15]
-	_ = x[MethodHead-16]
-	_ = x[MethodPost-17]
-	_ = x[MethodPut-18]
-	_ = x[MethodDelete-19]
-	_ = x[MethodConnect-20]
-	_ = x[MethodPatch-21]
-	_ = x[MethodOptions-22]
-	_ = x[MethodTrace-23]
-	_ = x[Name-24]
-	_ = x[Timeout-25]
-	_ = x[ConnectionTimeout-26]
-	_ = x[NoRedirect-27]
+	_ = x[Comment-1]
+	_ = x[Text-2]
+	_ = x[URL-3]
+	_ = x[Header-4]
+	_ = x[Body-5]
+	_ = x[Ident-6]
+	_ = x[RequestSeparator-7]
+	_ = x[At-8]
+	_ = x[Eq-9]
+	_ = x[Colon-10]
+	_ = x[LeftAngle-11]
+	_ = x[RightAngle-12]
+	_ = x[HTTPVersion-13]
+	_ = x[MethodGet-14]
+	_ = x[MethodHead-15]
+	_ = x[MethodPost-16]
+	_ = x[MethodPut-17]
+	_ = x[MethodDelete-18]
+	_ = x[MethodConnect-19]
+	_ = x[MethodPatch-20]
+	_ = x[MethodOptions-21]
+	_ = x[MethodTrace-22]
+	_ = x[Name-23]
+	_ = x[Timeout-24]
+	_ = x[ConnectionTimeout-25]
+	_ = x[NoRedirect-26]
 }
 
-const _Kind_name = "EOFErrorCommentTextURLHeaderBodyIdentRequestSeparatorAtEqColonLeftAngleRightAngleHTTPVersionMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTraceNameTimeoutConnectionTimeoutNoRedirect"
+const _Kind_name = "EOFCommentTextURLHeaderBodyIdentRequestSeparatorAtEqColonLeftAngleRightAngleHTTPVersionMethodGetMethodHeadMethodPostMethodPutMethodDeleteMethodConnectMethodPatchMethodOptionsMethodTraceNameTimeoutConnectionTimeoutNoRedirect"
 
-var _Kind_index = [...]uint8{0, 3, 8, 15, 19, 22, 28, 32, 37, 53, 55, 57, 62, 71, 81, 92, 101, 111, 121, 130, 142, 155, 166, 179, 190, 194, 201, 218, 228}
+var _Kind_index = [...]uint8{0, 3, 10, 14, 17, 23, 27, 32, 48, 50, 52, 57, 66, 76, 87, 96, 106, 116, 125, 137, 150, 161, 174, 185, 189, 196, 213, 223}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {

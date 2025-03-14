@@ -70,7 +70,7 @@ func (p *Parser) Parse() (syntax.File, error) {
 	file = p.parseGlobals(file)
 
 	// Everything else should just be parsing requests
-	for p.current.Kind != token.EOF && p.current.Kind != token.Error {
+	for p.current.Kind != token.EOF {
 		request := p.parseRequest()
 		// If it's name is missing, name it after its position in the file (1 indexed)
 		if request.Name == "" {
