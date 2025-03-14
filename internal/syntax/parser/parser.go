@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/FollowTheProcess/req/internal/syntax"
@@ -232,13 +234,6 @@ func (p *Parser) parseGlobals(file syntax.File) syntax.File {
 		return file
 	}
 
-	file.Vars = make(map[string]string)
-
-	// We now have tokens for keywords like NoRedirect etc. check for those and if it's them,
-	// let's set them directly on the Request struct in their proper types e.g. time.ParseDuration
-	//
-	// All others can just go into the vars map as Text
-
 	for p.current.Kind == token.At {
 		switch p.next.Kind {
 		case token.Timeout:
@@ -251,9 +246,59 @@ func (p *Parser) parseGlobals(file syntax.File) syntax.File {
 		case token.Name:
 			file.Name = p.parseName()
 		case token.Ident:
-			// Generic variable, shove it in the map
+			// Generic variable, shove it in the map, initialise the map
+			// lazily as not all files will have vars
 			key, value := p.parseVar()
+			if file.Vars == nil {
+				file.Vars = make(map[string]string)
+			}
 			file.Vars[key] = value
+		default:
+			p.errorf(
+				"unexpected token %s, expected one of %s, %s, %s, %s or %s",
+				p.next.Kind,
+				token.Timeout,
+				token.ConnectionTimeout,
+				token.NoRedirect,
+				token.Name,
+				token.Ident,
+			)
+		}
+
+		p.advance()
+	}
+
+	return file
+}
+
+// parseRequestVars parses a run of variable declarations in a request. Returning
+// the modified syntax.Request.
+//
+// If p.current is anything other than '@', parseRequestVars returns the request as is.
+func (p *Parser) parseRequestVars(request syntax.Request) syntax.Request {
+	if p.current.Kind != token.At {
+		return request
+	}
+
+	for p.current.Kind == token.At {
+		switch p.next.Kind {
+		case token.Timeout:
+			request.Timeout = p.parseDuration()
+		case token.ConnectionTimeout:
+			request.ConnectionTimeout = p.parseDuration()
+		case token.NoRedirect:
+			p.advance()
+			request.NoRedirect = true
+		case token.Name:
+			request.Name = p.parseName()
+		case token.Ident:
+			// Generic variable, shove it in the map, initialise the map
+			// lazily as not all requests will have vars
+			key, value := p.parseVar()
+			if request.Vars == nil {
+				request.Vars = make(map[string]string)
+			}
+			request.Vars[key] = value
 		default:
 			p.errorf(
 				"unexpected token %s, expected one of %s, %s, %s or %s",
@@ -263,12 +308,11 @@ func (p *Parser) parseGlobals(file syntax.File) syntax.File {
 				token.NoRedirect,
 				token.Ident,
 			)
+			p.advance() // Make progress
 		}
-
-		p.advance()
 	}
 
-	return file
+	return request
 }
 
 // parseRequest parses a single request in a http file.
@@ -281,10 +325,7 @@ func (p *Parser) parseRequest() syntax.Request {
 		return syntax.Request{}
 	}
 
-	request := syntax.Request{
-		Headers: make(map[string]string),
-		Vars:    make(map[string]string),
-	}
+	request := syntax.Request{}
 
 	// Does it have a name as in "### {name}"
 	if p.next.Kind == token.Text {
@@ -294,33 +335,7 @@ func (p *Parser) parseRequest() syntax.Request {
 
 	if p.next.Kind == token.At {
 		p.advance()
-		for p.current.Kind == token.At {
-			switch p.next.Kind {
-			case token.Timeout:
-				request.Timeout = p.parseDuration()
-			case token.ConnectionTimeout:
-				request.ConnectionTimeout = p.parseDuration()
-			case token.NoRedirect:
-				p.advance()
-				request.NoRedirect = true
-			case token.Name:
-				request.Name = p.parseName()
-			case token.Ident:
-				// Generic variable, shove it in the map
-				key, value := p.parseVar()
-				request.Vars[key] = value
-			default:
-				p.errorf(
-					"unexpected token %s, expected one of %s, %s, %s or %s",
-					p.next.Kind,
-					token.Timeout,
-					token.ConnectionTimeout,
-					token.NoRedirect,
-					token.Ident,
-				)
-				p.advance() // Make progress
-			}
-		}
+		request = p.parseRequestVars(request)
 	}
 
 	if !token.IsMethod(p.next.Kind) {
@@ -331,19 +346,37 @@ func (p *Parser) parseRequest() syntax.Request {
 	p.advance()
 	request.Method = p.text()
 
-	// TODO(@FollowTheProcess): Validate URL. We need to do that in two places
-	// 1) In any global variables declaring a URL like "@base = <url>", this one must be strict and enforce an absolute URL
-	// 2) Here which could either be a full URL, or use "{{base}}/items/1", in which case, we can assume base is valid
-	// 	  as it's gone through 1, maybe substitute it here? And validate the whole thing
 	p.expect(token.URL)
-	request.URL = p.text()
+	text := p.text()
+	if strings.Contains(text, "{{") {
+		// It's a partially templated URL, so we can't be too strict
+		if _, err := url.Parse(text); err != nil {
+			p.errorf("%q is an invalid URL: %v", text, err)
+			return syntax.Request{}
+		}
+	} else {
+		// If it's not templated it must be a fully valid URL
+		if _, err := url.ParseRequestURI(text); err != nil {
+			p.errorf("%q is an invalid URL: %v", text, err)
+			return syntax.Request{}
+		}
+	}
+
+	request.URL = text
 
 	if p.next.Kind == token.HTTPVersion {
 		p.advance()
 		request.HTTPVersion = p.text()
 	}
 
-	// Parse any headers
+	// Parse any headers, again initialising the map lazily
+	// although in fairness most requests will likely have headers
+	if p.next.Kind == token.Header {
+		if request.Headers == nil {
+			request.Headers = make(map[string]string)
+		}
+	}
+
 	for p.next.Kind == token.Header {
 		p.advance()
 		key := p.text()
