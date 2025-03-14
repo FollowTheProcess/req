@@ -1,0 +1,5 @@
+-- src.http --
+### NoMethod
+https://api.something.com/v1
+-- want.txt --
+no-method.txtar:2:29: request separators must be followed by either a name or a HTTP method, got URL

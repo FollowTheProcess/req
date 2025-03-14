@@ -353,7 +353,7 @@ func scanRequestSep(s *Scanner) scanFn {
 	s.emit(token.RequestSeparator)
 
 	if !unicode.IsSpace(s.char()) && !isAlpha(s.char()) && s.char() != eof {
-		s.errorf("unexpected char: %q", s.char())
+		s.errorf("bad request name character %q, request names may only begin with ASCII letters", s.char())
 		s.next()
 		return scanStart
 	}
@@ -455,7 +455,7 @@ func scanHTTPVersion(s *Scanner) scanFn {
 		if s.char() == '.' {
 			s.next() // Consume the '.'
 			if !isDigit(s.char()) {
-				s.error("bad number literal in HTTP version")
+				s.errorf("bad number literal in HTTP version, illegal char %q", s.char())
 				return nil
 			}
 			for isDigit(s.char()) {
