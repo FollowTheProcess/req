@@ -4,6 +4,7 @@ package scanner
 import (
 	"bytes"
 	"fmt"
+	"sync"
 	"unicode"
 	"unicode/utf8"
 
@@ -30,6 +31,7 @@ type Scanner struct {
 	line      int                 // Current line number (1 indexed)
 	lineStart int                 // Offset at which the current line started
 	width     int                 // Width of the last rune read from input, so we can backup
+	wg        sync.WaitGroup
 }
 
 // New returns a new [Scanner] that reads from r.
@@ -147,6 +149,7 @@ func (s *Scanner) run() {
 		state = state(s)
 	}
 	s.tokens <- token.Token{Kind: token.EOF, Start: s.pos, End: s.pos}
+	s.wg.Wait()
 	close(s.tokens)
 }
 
@@ -170,7 +173,11 @@ func (s *Scanner) error(msg string) {
 		EndCol:   endCol,
 	}
 
-	s.handler(position, msg)
+	s.wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		s.handler(position, msg)
+	}(&s.wg)
 }
 
 // errorf calls error with a formatted message.
@@ -223,6 +230,12 @@ func scanHash(s *Scanner) scanFn {
 	// '#' and the comment text
 	s.skip(isLineSpace)
 
+	// Requests may have '# @name [=] <text>' as an alternative way
+	// of setting their name
+	if s.char() == '@' {
+		return scanAt
+	}
+
 	// Now absorb any text until the the end of the line or eof
 	for s.char() != '\n' && s.char() != eof {
 		s.next()
@@ -235,6 +248,7 @@ func scanHash(s *Scanner) scanFn {
 
 // scanSlash scans a '/' character.
 func scanSlash(s *Scanner) scanFn {
+	// Part of some other text we don't care about
 	if s.peek() != '/' {
 		s.next()
 		return scanStart
@@ -247,6 +261,12 @@ func scanSlash(s *Scanner) scanFn {
 	// Ignore any (non line terminating) whitespace between the
 	// '//' and the comment text
 	s.skip(isLineSpace)
+
+	// Requests may have '// @name [=] <text>' as an alternative way
+	// of setting their name
+	if s.char() == '@' {
+		return scanAt
+	}
 
 	// Now absorb any text until the the end of the line or eof
 	for s.char() != '\n' && s.char() != eof {
@@ -339,6 +359,12 @@ func scanRequestSep(s *Scanner) scanFn {
 	}
 
 	s.emit(token.RequestSeparator)
+
+	if !unicode.IsSpace(s.char()) && !isAlpha(s.char()) && s.char() != eof {
+		s.errorf("unexpected char: %q", s.char())
+		s.next()
+		return scanStart
+	}
 
 	// If we have any text on the same line, it's the request name
 	s.skip(isLineSpace)

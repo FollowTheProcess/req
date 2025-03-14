@@ -1,0 +1,15 @@
+-- src.http --
+###
+# @name MyRequest
+GET https://api.somewhere.com/items/1
+-- want.json --
+{
+  "name": "named3.txtar",
+  "requests": [
+    {
+      "name": "MyRequest",
+      "method": "GET",
+      "url": "https://api.somewhere.com/items/1"
+    }
+  ]
+}
