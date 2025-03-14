@@ -270,6 +270,24 @@ func (p *Parser) parseRequest() syntax.Request {
 		request.Name = p.text()
 	}
 
+	// TODO(@FollowTheProcess): Other "keyword" request variables are allowed
+	// to be set in this way like @timeout, @no-redirect etc.
+	//
+	// So actually I think we should add token.Name as another "keyword"
+	// and then reuse the switch logic from parseGlobals above, the only difference is
+	// we won't be populating a syntax.File, but a syntax.Request
+
+	// It might be named in one of the other ways:
+	// # @name [=] MyRequest
+	// // @name [=] MyRequest
+	// if p.next.Kind == token.At {
+	// 	p.advance()
+	// 	// for p.current.Kind == token.At {
+	// 	// 	// Literally the same switch case as parseGlobals above
+	// 	// 	// probably want to factor it out
+	// 	// }
+	// }
+
 	if !token.IsMethod(p.next.Kind) {
 		p.errorf("request separators must be followed by either a name or a HTTP method, got %s", p.next.Kind)
 		return syntax.Request{}
