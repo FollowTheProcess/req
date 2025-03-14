@@ -8,5 +8,5 @@ GET https://api.somewhere.com/items/1
 <Token::Ident start=7, end=11>
 <Token::Text start=12, end=21>
 <Token::MethodGet start=22, end=25>
-<Token::URL start=26, end=60>
-<Token::EOF start=61, end=61>
+<Token::URL start=26, end=59>
+<Token::EOF start=60, end=60>

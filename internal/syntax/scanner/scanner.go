@@ -223,6 +223,12 @@ func scanHash(s *Scanner) scanFn {
 	// '#' and the comment text
 	s.skip(isLineSpace)
 
+	// Requests may have '# @name [=] <text>' as an alternative way
+	// of setting their name
+	if s.char() == '@' {
+		return scanAt
+	}
+
 	// Now absorb any text until the the end of the line or eof
 	for s.char() != '\n' && s.char() != eof {
 		s.next()
@@ -235,6 +241,7 @@ func scanHash(s *Scanner) scanFn {
 
 // scanSlash scans a '/' character.
 func scanSlash(s *Scanner) scanFn {
+	// Part of some other text we don't care about
 	if s.peek() != '/' {
 		s.next()
 		return scanStart
@@ -247,6 +254,12 @@ func scanSlash(s *Scanner) scanFn {
 	// Ignore any (non line terminating) whitespace between the
 	// '//' and the comment text
 	s.skip(isLineSpace)
+
+	// Requests may have '// @name [=] <text>' as an alternative way
+	// of setting their name
+	if s.char() == '@' {
+		return scanAt
+	}
 
 	// Now absorb any text until the the end of the line or eof
 	for s.char() != '\n' && s.char() != eof {

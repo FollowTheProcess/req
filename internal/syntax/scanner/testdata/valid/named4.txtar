@@ -9,5 +9,5 @@ GET https://api.somewhere.com/items/1
 <Token::Eq start=13, end=14>
 <Token::Text start=15, end=24>
 <Token::MethodGet start=25, end=28>
-<Token::URL start=29, end=63>
-<Token::EOF start=64, end=64>
+<Token::URL start=29, end=62>
+<Token::EOF start=63, end=63>
