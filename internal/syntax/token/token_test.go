@@ -93,6 +93,7 @@ func TestKeyword(t *testing.T) {
 		want token.Kind // Expected token Kind return
 		ok   bool       // Expected ok return
 	}{
+		{text: "name", want: token.Name, ok: true},
 		{text: "timeout", want: token.Timeout, ok: true},
 		{text: "connection-timeout", want: token.ConnectionTimeout, ok: true},
 		{text: "no-redirect", want: token.NoRedirect, ok: true},
@@ -116,6 +117,7 @@ func TestIsKeyword(t *testing.T) {
 		kind token.Kind // Kind under test
 		want bool       // Expected IsKeyword return value
 	}{
+		{kind: token.Name, want: true},
 		{kind: token.Timeout, want: true},
 		{kind: token.ConnectionTimeout, want: true},
 		{kind: token.NoRedirect, want: true},

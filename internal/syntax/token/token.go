@@ -32,6 +32,7 @@ const (
 	MethodPatch                   // MethodPatch
 	MethodOptions                 // MethodOptions
 	MethodTrace                   // MethodTrace
+	Name                          // Name
 	Timeout                       // Timeout
 	ConnectionTimeout             // ConnectionTimeout
 	NoRedirect                    // NoRedirect
@@ -85,6 +86,8 @@ func IsMethod(kind Kind) bool {
 // and true if it is. Otherwise [Ident] and false are returned.
 func Keyword(text string) (kind Kind, ok bool) {
 	switch text {
+	case "name":
+		return Name, true
 	case "timeout":
 		return Timeout, true
 	case "connection-timeout":
@@ -98,5 +101,5 @@ func Keyword(text string) (kind Kind, ok bool) {
 
 // IsKeyword reports whether the given kind is a keyword.
 func IsKeyword(kind Kind) bool {
-	return kind >= Timeout && kind <= NoRedirect
+	return kind >= Name && kind <= NoRedirect
 }

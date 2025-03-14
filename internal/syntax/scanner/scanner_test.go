@@ -69,7 +69,7 @@ func TestScanBasics(t *testing.T) {
 			src:  "# @name Test",
 			want: []token.Token{
 				{Kind: token.At, Start: 2, End: 3},
-				{Kind: token.Ident, Start: 3, End: 7},
+				{Kind: token.Name, Start: 3, End: 7},
 				{Kind: token.Text, Start: 8, End: 12},
 				{Kind: token.EOF, Start: 12, End: 12},
 			},
@@ -79,7 +79,7 @@ func TestScanBasics(t *testing.T) {
 			src:  "# @name = Test",
 			want: []token.Token{
 				{Kind: token.At, Start: 2, End: 3},
-				{Kind: token.Ident, Start: 3, End: 7},
+				{Kind: token.Name, Start: 3, End: 7},
 				{Kind: token.Eq, Start: 8, End: 9},
 				{Kind: token.Text, Start: 10, End: 14},
 				{Kind: token.EOF, Start: 14, End: 14},
@@ -90,7 +90,7 @@ func TestScanBasics(t *testing.T) {
 			src:  "# @name = Test\n",
 			want: []token.Token{
 				{Kind: token.At, Start: 2, End: 3},
-				{Kind: token.Ident, Start: 3, End: 7},
+				{Kind: token.Name, Start: 3, End: 7},
 				{Kind: token.Eq, Start: 8, End: 9},
 				{Kind: token.Text, Start: 10, End: 14},
 				{Kind: token.EOF, Start: 15, End: 15},
@@ -101,7 +101,7 @@ func TestScanBasics(t *testing.T) {
 			src:  "// @name Test",
 			want: []token.Token{
 				{Kind: token.At, Start: 3, End: 4},
-				{Kind: token.Ident, Start: 4, End: 8},
+				{Kind: token.Name, Start: 4, End: 8},
 				{Kind: token.Text, Start: 9, End: 13},
 				{Kind: token.EOF, Start: 13, End: 13},
 			},
@@ -111,7 +111,7 @@ func TestScanBasics(t *testing.T) {
 			src:  "// @name = Test",
 			want: []token.Token{
 				{Kind: token.At, Start: 3, End: 4},
-				{Kind: token.Ident, Start: 4, End: 8},
+				{Kind: token.Name, Start: 4, End: 8},
 				{Kind: token.Eq, Start: 9, End: 10},
 				{Kind: token.Text, Start: 11, End: 15},
 				{Kind: token.EOF, Start: 15, End: 15},
@@ -122,7 +122,7 @@ func TestScanBasics(t *testing.T) {
 			src:  "// @name = Test\n",
 			want: []token.Token{
 				{Kind: token.At, Start: 3, End: 4},
-				{Kind: token.Ident, Start: 4, End: 8},
+				{Kind: token.Name, Start: 4, End: 8},
 				{Kind: token.Eq, Start: 9, End: 10},
 				{Kind: token.Text, Start: 11, End: 15},
 				{Kind: token.EOF, Start: 16, End: 16},

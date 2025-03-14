@@ -24,7 +24,7 @@ Authorization: Bearer {{token}}
 -- tokens.txt --
 <Token::RequestSeparator start=0, end=3>
 <Token::At start=4, end=5>
-<Token::Ident start=5, end=9>
+<Token::Name start=5, end=9>
 <Token::Text start=10, end=20>
 <Token::At start=21, end=22>
 <Token::Timeout start=22, end=29>
