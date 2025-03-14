@@ -283,6 +283,7 @@ func (p *Parser) parseRequest() syntax.Request {
 
 	request := syntax.Request{
 		Headers: make(map[string]string),
+		Vars:    make(map[string]string),
 	}
 
 	// Does it have a name as in "### {name}"
@@ -317,6 +318,7 @@ func (p *Parser) parseRequest() syntax.Request {
 					token.NoRedirect,
 					token.Ident,
 				)
+				p.advance() // Make progress
 			}
 		}
 	}
