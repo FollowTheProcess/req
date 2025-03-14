@@ -201,10 +201,8 @@ func scanStart(s *Scanner) scanFn {
 			return scanHTTPVersion
 		case bytes.HasPrefix(s.rest(), []byte("http")):
 			return scanURL
-		case isAlpha(char):
+		case isIdent(char):
 			return scanText
-		case isDigit(char):
-			return scanNumber
 		default:
 			s.errorf("unexpected token %q", string(s.char()))
 			s.emit(token.Error)
@@ -416,28 +414,6 @@ func scanColon(s *Scanner) scanFn {
 	return scanStart
 }
 
-// scanNumber scans a number literal.
-func scanNumber(s *Scanner) scanFn {
-	for isDigit(s.char()) {
-		s.next()
-
-		if s.char() == '.' {
-			s.next() // Consume the '.'
-			if !isDigit(s.char()) {
-				s.error("bad number literal")
-				return nil
-			}
-			for isDigit(s.char()) {
-				s.next()
-			}
-		}
-	}
-
-	s.emit(token.Number)
-	s.skip(unicode.IsSpace)
-	return scanStart
-}
-
 // scanHTTPVersion scans a HTTP version declaration.
 //
 // The next characters in s.src are known to be 'HTTP', this consumes
@@ -455,8 +431,6 @@ func scanHTTPVersion(s *Scanner) scanFn {
 
 	s.next() // Consume the '/'
 
-	// Borrowed from scanNumber above, we need to consume arbitrary digits
-	// but don't want to emit a number token.
 	for isDigit(s.char()) {
 		s.next()
 

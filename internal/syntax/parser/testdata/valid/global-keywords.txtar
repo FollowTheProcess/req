@@ -1,6 +1,6 @@
 -- src.http --
-@timeout = 20
-@connection-timeout = 10s
+@timeout = 20s
+@connection-timeout 10s
 @no-redirect
 
 ### Keywords
@@ -16,7 +16,6 @@ GET https://users.com/api/v1/items/123
     }
   ],
   "timeout": "20s",
-  "connectionTimeout": "20s",
+  "connectionTimeout": "10s",
   "noRedirect": true
-
 }

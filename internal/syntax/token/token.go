@@ -12,7 +12,6 @@ const (
 	Error                         // Error
 	Comment                       // Comment
 	Text                          // Text
-	Number                        // Number
 	URL                           // URL
 	Header                        // Header
 	Body                          // Body

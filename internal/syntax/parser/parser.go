@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"slices"
-	"strconv"
 	"time"
 
 	"github.com/FollowTheProcess/req/internal/syntax"
@@ -189,56 +188,64 @@ func (p *Parser) parseGlobals(file syntax.File) syntax.File {
 
 	file.Vars = make(map[string]string)
 
-	// TODO(@FollowTheProcess): We now have tokens for keywords like NoRedirect etc.
-	// check for those and if it's them, let's set them directly on the Request struct
-	// in their proper types e.g. time.ParseDuration
+	// We now have tokens for keywords like NoRedirect etc. check for those and if it's them,
+	// let's set them directly on the Request struct in their proper types e.g. time.ParseDuration
 	//
-	// All other idents can just go into the vars map
-
-	// TODO(@FollowTheProcess): What about things like 1m30s, or even 6h5m30s?
-	// Actually... it might be easier if all variables were allowed to be was Text and URL? Then
-	// we'd just eat all the text on that line and let ParseDuration handle it
+	// All others can just go into the vars map as Text
 
 	for p.current.Kind == token.At {
 		switch p.next.Kind {
 		case token.Timeout:
 			p.advance()
-			p.expect(token.Eq)
-			p.expect(token.Number)
-
-			// Quantity of time, we don't know what units (if any) yet
-			quantity := p.text()
-
-			// If the next thing isn't Text, then it has no units so
-			// it's @timeout = 20 (meaning 20 seconds)
-			if p.next.Kind != token.Text {
-				seconds, err := strconv.ParseFloat(quantity, 64)
-				if err != nil {
-					p.errorf("timeout expects a valid decimal integer or float, got %q", quantity)
-					return file
-				}
-				file.Timeout = syntax.Duration(time.Duration(seconds) * time.Second)
-			} else {
-				// It does have a unit, in which case we have to combine the text and use time.ParseDuration
+			// Can either be @timeout = 20s or @timeout 20s
+			if p.next.Kind == token.Eq {
+				p.advance()
 			}
-		case token.ConnectionTimeout:
-		case token.NoRedirect:
+			p.expect(token.Text)
 
+			duration, err := time.ParseDuration(p.text())
+			if err != nil {
+				p.errorf("bad timeout value %q: %v", p.text(), err)
+			}
+			file.Timeout = syntax.Duration(duration)
+		case token.ConnectionTimeout:
+			p.advance()
+			// Can either be @connection-timeout = 20s or @connection-timeout 20s
+			if p.next.Kind == token.Eq {
+				p.advance()
+			}
+			p.expect(token.Text)
+
+			duration, err := time.ParseDuration(p.text())
+			if err != nil {
+				p.errorf("bad connection-timeout value %q: %v", p.text(), err)
+			}
+			file.ConnectionTimeout = syntax.Duration(duration)
+		case token.NoRedirect:
+			p.advance()
+			file.NoRedirect = true
 		case token.Ident:
 			// Generic variable, shove it in the map
 			p.advance()
 			key := p.text()
 			p.expect(token.Eq)
-			p.expect(token.URL, token.Number, token.Text)
+			p.expect(token.URL, token.Text)
 			value := p.text()
 			file.Vars[key] = value
 		default:
-			p.errorf("unexpected token %s, expected one of %s, %s, %s or %s", p.next.Kind, token.Timeout, token.ConnectionTimeout, token.NoRedirect, token.Ident)
-			return file
+			p.errorf(
+				"unexpected token %s, expected one of %s, %s, %s or %s",
+				p.next.Kind,
+				token.Timeout,
+				token.ConnectionTimeout,
+				token.NoRedirect,
+				token.Ident,
+			)
 		}
+
+		p.advance()
 	}
 
-	p.advance()
 	return file
 }
 
