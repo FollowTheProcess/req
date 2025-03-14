@@ -177,6 +177,52 @@ func (p *Parser) text() string {
 	return string(p.src[p.current.Start:p.current.End])
 }
 
+// parseDuration parses a duration declaration e.g. in a global or request variable.
+//
+// It assumes the '@ident' has already been consumed.
+func (p *Parser) parseDuration() syntax.Duration {
+	p.advance()
+	// Can either be @timeout = 20s or @timeout 20s
+	if p.next.Kind == token.Eq {
+		p.advance()
+	}
+	p.expect(token.Text)
+
+	duration, err := time.ParseDuration(p.text())
+	if err != nil {
+		p.errorf("bad timeout value %q: %v", p.text(), err)
+	}
+
+	return syntax.Duration(duration)
+}
+
+// parseName parses a name declaration e.g. in a global or request variable.
+//
+// It assumes the '@name' has already been consumed.
+func (p *Parser) parseName() string {
+	p.advance()
+	// Can either be @name = MyName or @name MyName
+	if p.next.Kind == token.Eq {
+		p.advance()
+	}
+	p.expect(token.Text)
+
+	return p.text()
+}
+
+// parseVar parses a generic @ident = <value> in either global or request scope.
+//
+// It assumes the '@ident' has already been consumed.
+func (p *Parser) parseVar() (key, value string) {
+	p.advance()
+	key = p.text()
+	p.expect(token.Eq)
+	p.expect(token.URL, token.Text)
+	value = p.text()
+
+	return key, value
+}
+
 // parseGlobals parses a run of variable declarations at the top of the file. Returning
 // the modified syntax.File.
 //
@@ -196,50 +242,17 @@ func (p *Parser) parseGlobals(file syntax.File) syntax.File {
 	for p.current.Kind == token.At {
 		switch p.next.Kind {
 		case token.Timeout:
-			p.advance()
-			// Can either be @timeout = 20s or @timeout 20s
-			if p.next.Kind == token.Eq {
-				p.advance()
-			}
-			p.expect(token.Text)
-
-			duration, err := time.ParseDuration(p.text())
-			if err != nil {
-				p.errorf("bad timeout value %q: %v", p.text(), err)
-			}
-			file.Timeout = syntax.Duration(duration)
+			file.Timeout = p.parseDuration()
 		case token.ConnectionTimeout:
-			p.advance()
-			// Can either be @connection-timeout = 20s or @connection-timeout 20s
-			if p.next.Kind == token.Eq {
-				p.advance()
-			}
-			p.expect(token.Text)
-
-			duration, err := time.ParseDuration(p.text())
-			if err != nil {
-				p.errorf("bad connection-timeout value %q: %v", p.text(), err)
-			}
-			file.ConnectionTimeout = syntax.Duration(duration)
+			file.ConnectionTimeout = p.parseDuration()
 		case token.NoRedirect:
 			p.advance()
 			file.NoRedirect = true
 		case token.Name:
-			p.advance()
-			// Can either be @name = MyName or @name MyName
-			if p.next.Kind == token.Eq {
-				p.advance()
-			}
-			p.expect(token.Text)
-
-			file.Name = p.text()
+			file.Name = p.parseName()
 		case token.Ident:
 			// Generic variable, shove it in the map
-			p.advance()
-			key := p.text()
-			p.expect(token.Eq)
-			p.expect(token.URL, token.Text)
-			value := p.text()
+			key, value := p.parseVar()
 			file.Vars[key] = value
 		default:
 			p.errorf(
@@ -260,7 +273,6 @@ func (p *Parser) parseGlobals(file syntax.File) syntax.File {
 
 // parseRequest parses a single request in a http file.
 func (p *Parser) parseRequest() syntax.Request {
-	// TODO(@FollowTheProcess): Request variables
 	// TODO(@FollowTheProcess): I think we're going to actually have to do most of the validation here
 	// as this will be the last place we have access to the raw src and position info so this is where
 	// we can point to source ranges and highlight errors.
@@ -279,57 +291,22 @@ func (p *Parser) parseRequest() syntax.Request {
 		request.Name = p.text()
 	}
 
-	// TODO(@FollowTheProcess): This is basically the same as parseGlobals above except it's just
-	// acting on the Request not the File. Refactor once tests all pass
 	if p.next.Kind == token.At {
 		p.advance()
 		for p.current.Kind == token.At {
 			switch p.next.Kind {
 			case token.Timeout:
-				p.advance()
-				// Can either be @timeout = 20s or @timeout 20s
-				if p.next.Kind == token.Eq {
-					p.advance()
-				}
-				p.expect(token.Text)
-
-				duration, err := time.ParseDuration(p.text())
-				if err != nil {
-					p.errorf("bad timeout value %q: %v", p.text(), err)
-				}
-				request.Timeout = syntax.Duration(duration)
+				request.Timeout = p.parseDuration()
 			case token.ConnectionTimeout:
-				p.advance()
-				// Can either be @connection-timeout = 20s or @connection-timeout 20s
-				if p.next.Kind == token.Eq {
-					p.advance()
-				}
-				p.expect(token.Text)
-
-				duration, err := time.ParseDuration(p.text())
-				if err != nil {
-					p.errorf("bad connection-timeout value %q: %v", p.text(), err)
-				}
-				request.ConnectionTimeout = syntax.Duration(duration)
+				request.ConnectionTimeout = p.parseDuration()
 			case token.NoRedirect:
 				p.advance()
 				request.NoRedirect = true
 			case token.Name:
-				p.advance()
-				// Can either be @name = MyName or @name MyName
-				if p.next.Kind == token.Eq {
-					p.advance()
-				}
-				p.expect(token.Text)
-
-				request.Name = p.text()
+				request.Name = p.parseName()
 			case token.Ident:
 				// Generic variable, shove it in the map
-				p.advance()
-				key := p.text()
-				p.expect(token.Eq)
-				p.expect(token.URL, token.Text)
-				value := p.text()
+				key, value := p.parseVar()
 				request.Vars[key] = value
 			default:
 				p.errorf(
