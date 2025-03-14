@@ -1,12 +1,12 @@
 -- src.http --
 ###
-@name MyRequest
+// @name MyRequest
 GET https://api.somewhere.com/items/1
 -- tokens.txt --
 <Token::RequestSeparator start=0, end=3>
-<Token::At start=4, end=5>
-<Token::Ident start=5, end=9>
-<Token::Text start=10, end=19>
-<Token::MethodGet start=20, end=23>
-<Token::URL start=24, end=57>
-<Token::EOF start=58, end=58>
+<Token::At start=7, end=8>
+<Token::Ident start=8, end=12>
+<Token::Text start=13, end=22>
+<Token::MethodGet start=23, end=26>
+<Token::URL start=27, end=61>
+<Token::EOF start=62, end=62>

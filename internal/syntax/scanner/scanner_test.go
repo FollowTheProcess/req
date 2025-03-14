@@ -65,6 +65,70 @@ func TestScanBasics(t *testing.T) {
 			},
 		},
 		{
+			name: "hash comment request name",
+			src:  "# @name Test",
+			want: []token.Token{
+				{Kind: token.At, Start: 2, End: 3},
+				{Kind: token.Ident, Start: 3, End: 7},
+				{Kind: token.Text, Start: 8, End: 12},
+				{Kind: token.EOF, Start: 11, End: 11},
+			},
+		},
+		{
+			name: "hash comment request equals name",
+			src:  "# @name = Test",
+			want: []token.Token{
+				{Kind: token.At, Start: 2, End: 3},
+				{Kind: token.Ident, Start: 3, End: 7},
+				{Kind: token.Eq, Start: 8, End: 9},
+				{Kind: token.Text, Start: 10, End: 13},
+				{Kind: token.EOF, Start: 13, End: 13},
+			},
+		},
+		{
+			name: "hash comment request equals name with line tail",
+			src:  "# @name = Test\n",
+			want: []token.Token{
+				{Kind: token.At, Start: 2, End: 3},
+				{Kind: token.Ident, Start: 3, End: 7},
+				{Kind: token.Eq, Start: 8, End: 9},
+				{Kind: token.Text, Start: 10, End: 13},
+				{Kind: token.EOF, Start: 14, End: 14},
+			},
+		},
+		{
+			name: "slash comment request name",
+			src:  "// @name Test",
+			want: []token.Token{
+				{Kind: token.At, Start: 3, End: 4},
+				{Kind: token.Ident, Start: 4, End: 8},
+				{Kind: token.Text, Start: 9, End: 13},
+				{Kind: token.EOF, Start: 13, End: 13},
+			},
+		},
+		{
+			name: "slash comment request equals name",
+			src:  "// @name = Test",
+			want: []token.Token{
+				{Kind: token.At, Start: 3, End: 4},
+				{Kind: token.Ident, Start: 4, End: 8},
+				{Kind: token.Eq, Start: 9, End: 10},
+				{Kind: token.Text, Start: 11, End: 15},
+				{Kind: token.EOF, Start: 15, End: 15},
+			},
+		},
+		{
+			name: "slash comment request equals name with line tail",
+			src:  "// @name = Test\n",
+			want: []token.Token{
+				{Kind: token.At, Start: 3, End: 4},
+				{Kind: token.Ident, Start: 4, End: 8},
+				{Kind: token.Eq, Start: 9, End: 10},
+				{Kind: token.Text, Start: 11, End: 15},
+				{Kind: token.EOF, Start: 16, End: 16},
+			},
+		},
+		{
 			name: "text",
 			src:  "sometext",
 			want: []token.Token{
