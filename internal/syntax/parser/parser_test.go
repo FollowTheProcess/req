@@ -3,9 +3,12 @@ package parser_test
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/FollowTheProcess/req/internal/syntax"
@@ -60,6 +63,51 @@ func TestParseValid(t *testing.T) {
 	}
 }
 
+// TestParseInvalid is the primary test for invalid syntax. It does much the same as TestParseValid
+// but instead of failing tests if a syntax error is encounter, it fails if there is not any syntax errors.
+//
+// Additionally, the errors are compared against a reference.
+func TestParseInvalid(t *testing.T) {
+	pattern := filepath.Join("testdata", "invalid", "*.txtar")
+	files, err := filepath.Glob(pattern)
+	test.Ok(t, err)
+
+	for _, file := range files {
+		name := filepath.Base(file)
+		t.Run(name, func(t *testing.T) {
+			archive, err := txtar.ParseFile(file)
+			test.Ok(t, err)
+
+			src, ok := archive.Read("src.http")
+			test.True(t, ok, test.Context("archive %s missing src.http", name))
+
+			want, ok := archive.Read("want.txt")
+			test.True(t, ok, test.Context("archive %s missing want.txt", name))
+
+			collector := &errorCollector{}
+
+			parser, err := parser.New(name, strings.NewReader(src), collector.handler())
+			test.Ok(t, err)
+
+			_, err = parser.Parse()
+			test.Err(t, err, test.Context("Parse() failed to return an error given invalid syntax"))
+
+			got := collector.String()
+
+			if *update {
+				err := archive.Write("want.txt", got)
+				test.Ok(t, err)
+
+				err = txtar.DumpFile(file, archive)
+				test.Ok(t, err)
+				return
+			}
+
+			test.Diff(t, got, want)
+		})
+	}
+}
+
 func FuzzParser(f *testing.F) {
 	// Get all the .http source from testdata for the corpus
 	pattern := filepath.Join("testdata", "valid", "*.txtar")
@@ -105,4 +153,29 @@ func testFailHandler(tb testing.TB) syntax.ErrorHandler {
 	return func(pos syntax.Position, msg string) {
 		tb.Fatalf("%s: %s", pos, msg)
 	}
+}
+
+type errorCollector struct {
+	mu   sync.Mutex
+	errs []string
+}
+
+func (e *errorCollector) handler() syntax.ErrorHandler {
+	return func(pos syntax.Position, msg string) {
+		// Because the scanner runs in it's own goroutine and also makes use of the
+		// handler
+		e.mu.Lock()
+		defer e.mu.Unlock()
+		e.errs = append(e.errs, fmt.Sprintf("%s: %s\n", pos, msg))
+	}
+}
+
+func (e *errorCollector) String() string {
+	var s strings.Builder
+	slices.Sort(e.errs) // Deterministic
+	for _, err := range e.errs {
+		s.WriteString(err)
+	}
+
+	return s.String()
 }
