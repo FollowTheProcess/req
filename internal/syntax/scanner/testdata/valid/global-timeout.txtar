@@ -7,7 +7,7 @@ GET https://api.somewhere.com/items/1
 <Token::At start=0, end=1>
 <Token::Timeout start=1, end=8>
 <Token::Eq start=9, end=10>
-<Token::Number start=11, end=14>
+<Token::Text start=11, end=14>
 <Token::RequestSeparator start=16, end=19>
 <Token::MethodGet start=20, end=23>
 <Token::URL start=24, end=57>
