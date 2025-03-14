@@ -279,23 +279,70 @@ func (p *Parser) parseRequest() syntax.Request {
 		request.Name = p.text()
 	}
 
-	// TODO(@FollowTheProcess): Other "keyword" request variables are allowed
-	// to be set in this way like @timeout, @no-redirect etc.
-	//
-	// So actually I think we should add token.Name as another "keyword"
-	// and then reuse the switch logic from parseGlobals above, the only difference is
-	// we won't be populating a syntax.File, but a syntax.Request
+	// TODO(@FollowTheProcess): This is basically the same as parseGlobals above except it's just
+	// acting on the Request not the File. Refactor once tests all pass
+	if p.next.Kind == token.At {
+		p.advance()
+		for p.current.Kind == token.At {
+			switch p.next.Kind {
+			case token.Timeout:
+				p.advance()
+				// Can either be @timeout = 20s or @timeout 20s
+				if p.next.Kind == token.Eq {
+					p.advance()
+				}
+				p.expect(token.Text)
 
-	// It might be named in one of the other ways:
-	// # @name [=] MyRequest
-	// // @name [=] MyRequest
-	// if p.next.Kind == token.At {
-	// 	p.advance()
-	// 	// for p.current.Kind == token.At {
-	// 	// 	// Literally the same switch case as parseGlobals above
-	// 	// 	// probably want to factor it out
-	// 	// }
-	// }
+				duration, err := time.ParseDuration(p.text())
+				if err != nil {
+					p.errorf("bad timeout value %q: %v", p.text(), err)
+				}
+				request.Timeout = syntax.Duration(duration)
+			case token.ConnectionTimeout:
+				p.advance()
+				// Can either be @connection-timeout = 20s or @connection-timeout 20s
+				if p.next.Kind == token.Eq {
+					p.advance()
+				}
+				p.expect(token.Text)
+
+				duration, err := time.ParseDuration(p.text())
+				if err != nil {
+					p.errorf("bad connection-timeout value %q: %v", p.text(), err)
+				}
+				request.ConnectionTimeout = syntax.Duration(duration)
+			case token.NoRedirect:
+				p.advance()
+				request.NoRedirect = true
+			case token.Name:
+				p.advance()
+				// Can either be @name = MyName or @name MyName
+				if p.next.Kind == token.Eq {
+					p.advance()
+				}
+				p.expect(token.Text)
+
+				request.Name = p.text()
+			case token.Ident:
+				// Generic variable, shove it in the map
+				p.advance()
+				key := p.text()
+				p.expect(token.Eq)
+				p.expect(token.URL, token.Text)
+				value := p.text()
+				request.Vars[key] = value
+			default:
+				p.errorf(
+					"unexpected token %s, expected one of %s, %s, %s or %s",
+					p.next.Kind,
+					token.Timeout,
+					token.ConnectionTimeout,
+					token.NoRedirect,
+					token.Ident,
+				)
+			}
+		}
+	}
 
 	if !token.IsMethod(p.next.Kind) {
 		p.errorf("request separators must be followed by either a name or a HTTP method, got %s", p.next.Kind)
