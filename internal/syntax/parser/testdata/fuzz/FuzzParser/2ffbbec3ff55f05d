@@ -1,0 +1,2 @@
+go test fuzz v1
+string("### My Request\n@\x00T https://api.somewhere.com/items/1\n")
