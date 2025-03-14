@@ -29,12 +29,10 @@ Authorization: Bearer {{token}}
 <Token::Text start=10, end=20>
 <Token::At start=21, end=22>
 <Token::Timeout start=22, end=29>
-<Token::Number start=30, end=32>
-<Token::Text start=32, end=33>
+<Token::Text start=30, end=33>
 <Token::At start=34, end=35>
 <Token::ConnectionTimeout start=35, end=53>
-<Token::Number start=54, end=56>
-<Token::Text start=56, end=57>
+<Token::Text start=54, end=57>
 <Token::At start=58, end=59>
 <Token::NoRedirect start=59, end=70>
 <Token::MethodPut start=71, end=74>

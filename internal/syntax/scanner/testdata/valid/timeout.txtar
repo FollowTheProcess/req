@@ -11,8 +11,7 @@ GET https://api.somewhere.com/items/1
 <Token::Text start=10, end=21>
 <Token::At start=22, end=23>
 <Token::Timeout start=23, end=30>
-<Token::Number start=31, end=34>
-<Token::Text start=34, end=35>
+<Token::Text start=31, end=35>
 <Token::MethodGet start=36, end=39>
 <Token::URL start=40, end=73>
 <Token::EOF start=74, end=74>

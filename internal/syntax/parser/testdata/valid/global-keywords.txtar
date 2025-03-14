@@ -1,0 +1,21 @@
+-- src.http --
+@timeout = 20s
+@connection-timeout 10s
+@no-redirect
+
+### Keywords
+GET https://users.com/api/v1/items/123
+-- want.json --
+{
+  "name": "global-keywords.txtar",
+  "requests": [
+    {
+      "name": "Keywords",
+      "method": "GET",
+      "url": "https://users.com/api/v1/items/123"
+    }
+  ],
+  "timeout": "20s",
+  "connectionTimeout": "10s",
+  "noRedirect": true
+}

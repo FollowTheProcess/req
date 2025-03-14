@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"time"
 
 	"github.com/FollowTheProcess/req/internal/syntax"
 	"github.com/FollowTheProcess/req/internal/syntax/scanner"
@@ -64,7 +65,7 @@ func (p *Parser) Parse() (syntax.File, error) {
 	}
 
 	// Parse any globals at the top of the file
-	file.Vars = p.parseVars()
+	file = p.parseGlobals(file)
 
 	// Everything else should just be parsing requests
 	for p.current.Kind != token.EOF && p.current.Kind != token.Error {
@@ -95,9 +96,19 @@ func (p *Parser) advance() {
 // The parser is advanced only if the next token is of one of these kinds such that after returning
 // p.current will be one of the kinds.
 func (p *Parser) expect(kinds ...token.Kind) {
-	if !slices.Contains(kinds, p.next.Kind) {
-		p.errorf("expected one of %v, got %s", kinds, p.next.Kind)
+	switch len(kinds) {
+	case 0:
 		return
+	case 1:
+		if p.next.Kind != kinds[0] {
+			p.errorf("expected %s, got %s", kinds[0], p.next.Kind)
+			return
+		}
+	default:
+		if !slices.Contains(kinds, p.next.Kind) {
+			p.errorf("expected one of %v, got %s", kinds, p.next.Kind)
+			return
+		}
 	}
 
 	p.advance()
@@ -166,34 +177,76 @@ func (p *Parser) text() string {
 	return string(p.src[p.current.Start:p.current.End])
 }
 
-// parseVars parses a run of variable declarations.
+// parseGlobals parses a run of variable declarations at the top of the file. Returning
+// the modified syntax.File.
 //
-// If p.current is anything other than '@', parseVars returns nil.
-func (p *Parser) parseVars() map[string]string {
+// If p.current is anything other than '@', parseGlobals returns the input file as is.
+func (p *Parser) parseGlobals(file syntax.File) syntax.File {
 	if p.current.Kind != token.At {
-		return nil
+		return file
 	}
 
-	vars := make(map[string]string)
+	file.Vars = make(map[string]string)
 
-	// TODO(@FollowTheProcess): We now have tokens for keywords like NoRedirect etc.
-	// check for those and if it's them, let's set them directly on the Request struct
-	// in their proper types e.g. time.ParseDuration
+	// We now have tokens for keywords like NoRedirect etc. check for those and if it's them,
+	// let's set them directly on the Request struct in their proper types e.g. time.ParseDuration
 	//
-	// All other idents can just go into the vars map
+	// All others can just go into the vars map as Text
 
 	for p.current.Kind == token.At {
-		p.expect(token.Ident)
-		key := p.text()
-		p.expect(token.Eq)
-		p.expect(token.URL, token.Number, token.Text)
-		value := p.text()
+		switch p.next.Kind {
+		case token.Timeout:
+			p.advance()
+			// Can either be @timeout = 20s or @timeout 20s
+			if p.next.Kind == token.Eq {
+				p.advance()
+			}
+			p.expect(token.Text)
 
-		vars[key] = value
+			duration, err := time.ParseDuration(p.text())
+			if err != nil {
+				p.errorf("bad timeout value %q: %v", p.text(), err)
+			}
+			file.Timeout = syntax.Duration(duration)
+		case token.ConnectionTimeout:
+			p.advance()
+			// Can either be @connection-timeout = 20s or @connection-timeout 20s
+			if p.next.Kind == token.Eq {
+				p.advance()
+			}
+			p.expect(token.Text)
+
+			duration, err := time.ParseDuration(p.text())
+			if err != nil {
+				p.errorf("bad connection-timeout value %q: %v", p.text(), err)
+			}
+			file.ConnectionTimeout = syntax.Duration(duration)
+		case token.NoRedirect:
+			p.advance()
+			file.NoRedirect = true
+		case token.Ident:
+			// Generic variable, shove it in the map
+			p.advance()
+			key := p.text()
+			p.expect(token.Eq)
+			p.expect(token.URL, token.Text)
+			value := p.text()
+			file.Vars[key] = value
+		default:
+			p.errorf(
+				"unexpected token %s, expected one of %s, %s, %s or %s",
+				p.next.Kind,
+				token.Timeout,
+				token.ConnectionTimeout,
+				token.NoRedirect,
+				token.Ident,
+			)
+		}
+
 		p.advance()
 	}
 
-	return vars
+	return file
 }
 
 // parseRequest parses a single request in a http file.
