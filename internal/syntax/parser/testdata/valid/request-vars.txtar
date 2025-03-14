@@ -1,0 +1,20 @@
+-- src.http --
+### Vars
+// @no-redirect
+# @timeout 10s
+// @connection-timeout = 5s
+GET https://users.com/api/v1/items/123
+-- want.json --
+{
+  "name": "request-vars.txtar",
+  "requests": [
+    {
+      "name": "Vars",
+      "method": "GET",
+      "url": "https://users.com/api/v1/items/123",
+      "timeout": "10s",
+      "connectionTimeout": "5s",
+      "noRedirect": true
+    }
+  ]
+}

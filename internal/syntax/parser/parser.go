@@ -192,7 +192,7 @@ func (p *Parser) parseDuration() syntax.Duration {
 
 	duration, err := time.ParseDuration(p.text())
 	if err != nil {
-		p.errorf("bad timeout value %q: %v", p.text(), err)
+		p.errorf("bad timeout value: %v", err)
 	}
 
 	return syntax.Duration(duration)
@@ -333,8 +333,8 @@ func (p *Parser) parseRequestVars(request syntax.Request) syntax.Request {
 				token.NoRedirect,
 				token.Ident,
 			)
-			p.advance() // Make progress
 		}
+		p.advance()
 	}
 
 	return request
@@ -358,17 +358,14 @@ func (p *Parser) parseRequest() syntax.Request {
 		request.Name = p.text()
 	}
 
-	if p.next.Kind == token.At {
-		p.advance()
-		request = p.parseRequestVars(request)
-	}
+	p.advance()
+	request = p.parseRequestVars(request)
 
-	if !token.IsMethod(p.next.Kind) {
-		p.errorf("request separators must be followed by either a name or a HTTP method, got %s", p.next.Kind)
+	if !token.IsMethod(p.current.Kind) {
+		p.errorf("request separators must be followed by either a name or a HTTP method, got %s", p.current.Kind)
 		return syntax.Request{}
 	}
 
-	p.advance()
 	request.Method = p.text()
 
 	p.expect(token.URL)
@@ -432,6 +429,7 @@ func (p *Parser) parseRequest() syntax.Request {
 
 	if request.Body != nil && request.BodyFile != "" {
 		p.error("cannot have both an inline body and an input body file")
+		return syntax.Request{}
 	}
 
 	return request

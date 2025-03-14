@@ -1,0 +1,10 @@
+-- src.http --
+###
+GET https://somewhere.com/api HTTP/1.....3
+-- tokens.txt --
+<Token::RequestSeparator start=0, end=3>
+<Token::MethodGet start=4, end=7>
+<Token::URL start=8, end=33>
+<Token::EOF start=41, end=41>
+-- errors.txt --
+bad-http-version2.txtar:2:31-38: bad number literal in HTTP version, illegal char '.'

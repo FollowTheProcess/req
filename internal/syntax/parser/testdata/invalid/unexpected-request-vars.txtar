@@ -4,5 +4,5 @@
 -- want.txt --
 unexpected-request-vars.txtar:2:11: expected Eq, got EOF
 unexpected-request-vars.txtar:2:11: expected one of [URL Text], got EOF
-unexpected-request-vars.txtar:2:11: request separators must be followed by either a name or a HTTP method, got EOF
+unexpected-request-vars.txtar:2:12: request separators must be followed by either a name or a HTTP method, got EOF
 unexpected-request-vars.txtar:2:12: unexpected token "!"

@@ -1,0 +1,6 @@
+-- src.http --
+\uFFFD
+-- tokens.txt --
+<Token::EOF start=0, end=0>
+-- errors.txt --
+bad-utf.txtar:1:1: unexpected token "\\"
