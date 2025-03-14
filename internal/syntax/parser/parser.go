@@ -224,6 +224,15 @@ func (p *Parser) parseGlobals(file syntax.File) syntax.File {
 		case token.NoRedirect:
 			p.advance()
 			file.NoRedirect = true
+		case token.Name:
+			p.advance()
+			// Can either be @name = MyName or @name MyName
+			if p.next.Kind == token.Eq {
+				p.advance()
+			}
+			p.expect(token.Text)
+
+			file.Name = p.text()
 		case token.Ident:
 			// Generic variable, shove it in the map
 			p.advance()
