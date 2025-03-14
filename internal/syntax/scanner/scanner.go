@@ -4,7 +4,6 @@ package scanner
 import (
 	"bytes"
 	"fmt"
-	"sync"
 	"unicode"
 	"unicode/utf8"
 
@@ -31,7 +30,6 @@ type Scanner struct {
 	line      int                 // Current line number (1 indexed)
 	lineStart int                 // Offset at which the current line started
 	width     int                 // Width of the last rune read from input, so we can backup
-	wg        sync.WaitGroup
 }
 
 // New returns a new [Scanner] that reads from r.
@@ -149,7 +147,6 @@ func (s *Scanner) run() {
 		state = state(s)
 	}
 	s.tokens <- token.Token{Kind: token.EOF, Start: s.pos, End: s.pos}
-	s.wg.Wait()
 	close(s.tokens)
 }
 
@@ -173,11 +170,7 @@ func (s *Scanner) error(msg string) {
 		EndCol:   endCol,
 	}
 
-	s.wg.Add(1)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		s.handler(position, msg)
-	}(&s.wg)
+	s.handler(position, msg)
 }
 
 // errorf calls error with a formatted message.

@@ -215,14 +215,33 @@ func (p *Parser) parseName() string {
 // parseVar parses a generic @ident = <value> in either global or request scope.
 //
 // It assumes the '@ident' has already been consumed.
-func (p *Parser) parseVar() (key, value string) {
+func (p *Parser) parseVar() (key, value string, ok bool) {
 	p.advance()
 	key = p.text()
 	p.expect(token.Eq)
 	p.expect(token.URL, token.Text)
+	if p.current.Kind == token.URL {
+		p.validateURL(p.text())
+	}
 	value = p.text()
 
-	return key, value
+	return key, value, true
+}
+
+// validateURL validates a (possibly templated URL). The validation is on
+// a best effort basis.
+func (p *Parser) validateURL(raw string) {
+	if strings.Contains(raw, "{{") {
+		// It's a partially templated URL, so we can't be too strict
+		if _, err := url.Parse(raw); err != nil {
+			p.errorf("invalid URL: %v", err)
+		}
+	} else {
+		// If it's not templated it must be a fully valid URL
+		if _, err := url.ParseRequestURI(raw); err != nil {
+			p.errorf("invalid URL: %v", err)
+		}
+	}
 }
 
 // parseGlobals parses a run of variable declarations at the top of the file. Returning
@@ -248,7 +267,10 @@ func (p *Parser) parseGlobals(file syntax.File) syntax.File {
 		case token.Ident:
 			// Generic variable, shove it in the map, initialise the map
 			// lazily as not all files will have vars
-			key, value := p.parseVar()
+			key, value, ok := p.parseVar()
+			if !ok {
+				return file
+			}
 			if file.Vars == nil {
 				file.Vars = make(map[string]string)
 			}
@@ -294,7 +316,10 @@ func (p *Parser) parseRequestVars(request syntax.Request) syntax.Request {
 		case token.Ident:
 			// Generic variable, shove it in the map, initialise the map
 			// lazily as not all requests will have vars
-			key, value := p.parseVar()
+			key, value, ok := p.parseVar()
+			if !ok {
+				return request
+			}
 			if request.Vars == nil {
 				request.Vars = make(map[string]string)
 			}
@@ -347,22 +372,9 @@ func (p *Parser) parseRequest() syntax.Request {
 	request.Method = p.text()
 
 	p.expect(token.URL)
-	text := p.text()
-	if strings.Contains(text, "{{") {
-		// It's a partially templated URL, so we can't be too strict
-		if _, err := url.Parse(text); err != nil {
-			p.errorf("%q is an invalid URL: %v", text, err)
-			return syntax.Request{}
-		}
-	} else {
-		// If it's not templated it must be a fully valid URL
-		if _, err := url.ParseRequestURI(text); err != nil {
-			p.errorf("%q is an invalid URL: %v", text, err)
-			return syntax.Request{}
-		}
-	}
+	p.validateURL(p.text())
 
-	request.URL = text
+	request.URL = p.text()
 
 	if p.next.Kind == token.HTTPVersion {
 		p.advance()

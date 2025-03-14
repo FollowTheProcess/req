@@ -19,10 +19,10 @@ import (
 
 var update = flag.Bool("update", false, "Update snapshots and testdata")
 
-// TestParseValid is the primary parser test for valid syntax. It reads src http text from
+// TestValid is the primary parser test for valid syntax. It reads src http text from
 // a txtar archive in testdata/valid, parses it to completion, serialises that parsed result
 // to JSON then generates a pretty diff if it doesn't match.
-func TestParseValid(t *testing.T) {
+func TestValid(t *testing.T) {
 	pattern := filepath.Join("testdata", "valid", "*.txtar")
 	files, err := filepath.Glob(pattern)
 	test.Ok(t, err)
@@ -63,11 +63,11 @@ func TestParseValid(t *testing.T) {
 	}
 }
 
-// TestParseInvalid is the primary test for invalid syntax. It does much the same as TestParseValid
+// TestInvalid is the primary test for invalid syntax. It does much the same as TestParseValid
 // but instead of failing tests if a syntax error is encounter, it fails if there is not any syntax errors.
 //
 // Additionally, the errors are compared against a reference.
-func TestParseInvalid(t *testing.T) {
+func TestInvalid(t *testing.T) {
 	pattern := filepath.Join("testdata", "invalid", "*.txtar")
 	files, err := filepath.Glob(pattern)
 	test.Ok(t, err)
@@ -156,8 +156,8 @@ func testFailHandler(tb testing.TB) syntax.ErrorHandler {
 }
 
 type errorCollector struct {
-	mu   sync.Mutex
 	errs []string
+	mu   sync.Mutex
 }
 
 func (e *errorCollector) handler() syntax.ErrorHandler {

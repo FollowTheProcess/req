@@ -2,9 +2,11 @@ package scanner_test
 
 import (
 	"flag"
+	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/FollowTheProcess/req/internal/syntax"
@@ -462,6 +464,7 @@ func TestValid(t *testing.T) {
 		name := filepath.Base(file)
 		t.Run(name, func(t *testing.T) {
 			defer goleak.VerifyNone(t)
+
 			archive, err := txtar.ParseFile(file)
 			test.Ok(t, err)
 
@@ -501,6 +504,69 @@ func TestValid(t *testing.T) {
 			}
 
 			test.Diff(t, got, want)
+		})
+	}
+}
+
+func TestInvalid(t *testing.T) {
+	pattern := filepath.Join("testdata", "invalid", "*.txtar")
+	files, err := filepath.Glob(pattern)
+	test.Ok(t, err)
+
+	for _, file := range files {
+		name := filepath.Base(file)
+		t.Run(name, func(t *testing.T) {
+			defer goleak.VerifyNone(t)
+
+			archive, err := txtar.ParseFile(file)
+			test.Ok(t, err)
+
+			src, ok := archive.Read("src.http")
+			test.True(t, ok, test.Context("archive missing src.http"))
+
+			want, ok := archive.Read("tokens.txt")
+			test.True(t, ok, test.Context("archive missing tokens.txt"))
+
+			errs, ok := archive.Read("errors.txt")
+			test.True(t, ok, test.Context("archive missing errors.txt"))
+
+			collector := &errorCollector{}
+
+			scanner := scanner.New(name, []byte(src), collector.handler())
+
+			var tokens []token.Token
+			for {
+				tok := scanner.Scan()
+				tokens = append(tokens, tok)
+				if tok.Kind == token.EOF {
+					break
+				}
+			}
+
+			var formattedTokens strings.Builder
+			for _, tok := range tokens {
+				formattedTokens.WriteString(tok.String())
+				formattedTokens.WriteByte('\n')
+			}
+
+			got := formattedTokens.String()
+			gotErrs := collector.String()
+
+			if *update {
+				// Update the expected with what's actually been seen
+				err := archive.Write("tokens.txt", got)
+				test.Ok(t, err)
+
+				err = archive.Write("errors.txt", gotErrs)
+				test.Ok(t, err)
+
+				err = txtar.DumpFile(file, archive)
+				test.Ok(t, err)
+				return
+			}
+
+			test.Diff(t, got, want)
+			test.Diff(t, gotErrs, errs)
 		})
 	}
 }
@@ -569,4 +635,29 @@ func testFailHandler(tb testing.TB) syntax.ErrorHandler {
 	return func(pos syntax.Position, msg string) {
 		tb.Fatalf("%s: %s", pos, msg)
 	}
+}
+
+type errorCollector struct {
+	errs []string
+	mu   sync.Mutex
+}
+
+func (e *errorCollector) handler() syntax.ErrorHandler {
+	return func(pos syntax.Position, msg string) {
+		// Because the scanner runs in it's own goroutine and also makes use of the
+		// handler
+		e.mu.Lock()
+		defer e.mu.Unlock()
+		e.errs = append(e.errs, fmt.Sprintf("%s: %s\n", pos, msg))
+	}
+}
+
+func (e *errorCollector) String() string {
+	var s strings.Builder
+	slices.Sort(e.errs) // Deterministic
+	for _, err := range e.errs {
+		s.WriteString(err)
+	}
+
+	return s.String()
 }
