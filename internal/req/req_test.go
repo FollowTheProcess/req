@@ -2,6 +2,7 @@ package req_test
 
 import (
 	"bytes"
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -26,7 +27,8 @@ func TestCheck(t *testing.T) {
 		test.Equal(t, stderr.String(), "")
 
 		// Stdout should have the success message
-		test.Equal(t, stdout.String(), "Success: testdata/check/good.http is valid\n")
+		want := fmt.Sprintf("Success: %s is valid\n", good)
+		test.Equal(t, stdout.String(), want)
 	})
 
 	t.Run("bad", func(t *testing.T) {
@@ -39,11 +41,8 @@ func TestCheck(t *testing.T) {
 		test.Err(t, err)
 
 		// Stderr should have the syntax error
-		test.Equal(
-			t,
-			stderr.String(),
-			`testdata/check/bad.http:2:14-27: bad timeout value: time: invalid duration "amillionyears"`+"\n",
-		)
+		want := fmt.Sprintf("%s:2:14-27: bad timeout value: time: invalid duration %q\n", bad, "amillionyears")
+		test.Equal(t, stderr.String(), want)
 
 		// Stdout should be empty
 		test.Equal(t, stdout.String(), "")
