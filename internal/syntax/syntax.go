@@ -5,6 +5,7 @@ package syntax
 
 import (
 	"fmt"
+	"io"
 	"time"
 )
 
@@ -114,4 +115,14 @@ type Request struct {
 	Timeout           Duration          `json:"timeout,omitempty"`           // Request specific timeout, overrides global if set
 	ConnectionTimeout Duration          `json:"connectionTimeout,omitempty"` // Request specific connection timeout, overrides global if set
 	NoRedirect        bool              `json:"noRedirect,omitempty"`        // Disable following redirects on this specific request, overrides global if set
+}
+
+// ConsoleHandler returns a [ErrorHandler] that formats the syntax error for
+// display on the terminal to a user.
+func ConsoleHandler(w io.Writer) ErrorHandler {
+	return func(pos Position, msg string) {
+		// TODO(@FollowTheProcess): Make this *much* better, I want to show a nice snippet
+		// of the source text with some pretty lines and arrows highlighting source ranges etc.
+		fmt.Fprintf(w, "%s: %s\n", pos, msg)
+	}
 }

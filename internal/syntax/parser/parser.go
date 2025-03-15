@@ -160,13 +160,14 @@ func (p *Parser) position() syntax.Position {
 // error calculates the current position and calls the installed error handler
 // with the correct information.
 func (p *Parser) error(msg string) {
+	p.hadErrors = true
+
 	if p.handler == nil {
 		// I guess ignore?
 		return
 	}
 
 	p.handler(p.position(), msg)
-	p.hadErrors = true
 }
 
 // errorf calls error with a formatted message.
@@ -342,9 +343,6 @@ func (p *Parser) parseRequestVars(request syntax.Request) syntax.Request {
 
 // parseRequest parses a single request in a http file.
 func (p *Parser) parseRequest() syntax.Request {
-	// TODO(@FollowTheProcess): I think we're going to actually have to do most of the validation here
-	// as this will be the last place we have access to the raw src and position info so this is where
-	// we can point to source ranges and highlight errors.
 	if p.current.Kind != token.RequestSeparator {
 		p.errorf("expected %s, got %s", token.RequestSeparator, p.current.Kind)
 		return syntax.Request{}
