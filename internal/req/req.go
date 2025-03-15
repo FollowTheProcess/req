@@ -2,6 +2,7 @@
 package req
 
 import (
+	"fmt"
 	"io"
 	"os"
 
@@ -39,7 +40,7 @@ func (r Req) Check(file string) error {
 
 	_, err = parser.Parse()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %s is not valid http syntax", err, file)
 	}
 
 	msg.Fsuccess(r.stdout, "%s is valid", file)
