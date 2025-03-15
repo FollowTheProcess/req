@@ -1,0 +1,50 @@
+package req_test
+
+import (
+	"bytes"
+	"fmt"
+	"path/filepath"
+	"testing"
+
+	"github.com/FollowTheProcess/req/internal/req"
+	"github.com/FollowTheProcess/test"
+)
+
+func TestCheck(t *testing.T) {
+	good := filepath.Join("testdata", "check", "good.http")
+	bad := filepath.Join("testdata", "check", "bad.http")
+
+	t.Run("good", func(t *testing.T) {
+		stdout := &bytes.Buffer{}
+		stderr := &bytes.Buffer{}
+
+		req := req.New(stdout, stderr)
+
+		err := req.Check(good)
+		test.Ok(t, err)
+
+		// Stderr should be empty
+		test.Equal(t, stderr.String(), "")
+
+		// Stdout should have the success message
+		want := fmt.Sprintf("Success: %s is valid\n", good)
+		test.Equal(t, stdout.String(), want)
+	})
+
+	t.Run("bad", func(t *testing.T) {
+		stdout := &bytes.Buffer{}
+		stderr := &bytes.Buffer{}
+
+		req := req.New(stdout, stderr)
+
+		err := req.Check(bad)
+		test.Err(t, err)
+
+		// Stderr should have the syntax error
+		want := fmt.Sprintf("%s:2:14-27: bad timeout value: time: invalid duration %q\n", bad, "amillionyears")
+		test.Equal(t, stderr.String(), want)
+
+		// Stdout should be empty
+		test.Equal(t, stdout.String(), "")
+	})
+}
