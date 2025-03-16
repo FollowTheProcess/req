@@ -11,16 +11,18 @@ X-Something-Else: yes
 Authorization: Bearer {{token}}
 
 {
-  "some": "stuff",
   "here": [
     "arbitrary",
-    "json",
+    "json"
   ],
   "is_allowed": {
-    "including": "nested": {
-      "objects": ["yes"]
+    "including": {
+      "nested": [
+        "lists"
+      ]
     }
-  }
+  },
+  "some": "stuff"
 }
 -- tokens.txt --
 <Token::RequestSeparator start=0, end=3>
@@ -50,5 +52,5 @@ Authorization: Bearer {{token}}
 <Token::Header start=194, end=207>
 <Token::Colon start=207, end=208>
 <Token::Text start=209, end=225>
-<Token::Body start=227, end=378>
-<Token::EOF start=378, end=378>
+<Token::Body start=227, end=384>
+<Token::EOF start=384, end=384>
