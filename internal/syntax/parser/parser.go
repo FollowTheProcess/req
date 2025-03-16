@@ -19,6 +19,9 @@ import (
 // See https://www.jetbrains.com/help/idea/exploring-http-syntax.html#dynamic-variables
 // would be fun if we could support all of these
 
+// TODO(@FollowTheProcess): Enforce that variable interpolation can only appear in URLs
+// header values and body
+
 // ErrParse is a generic parsing error, details on the error are passed
 // to the parsers [syntax.ErrorHandler] at the moment it occurs.
 var ErrParse = errors.New("parse error")
