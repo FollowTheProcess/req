@@ -50,7 +50,13 @@ func TestCheck(t *testing.T) {
 		}
 
 		// Stderr should have the syntax error
-		test.True(t, strings.Contains(got, `testdata/check/bad.http:2:14-27: bad timeout value: time: invalid duration "amillionyears"`))
+		test.True(
+			t,
+			strings.Contains(
+				got,
+				`testdata/check/bad.http:2:14-27: bad timeout value: time: invalid duration "amillionyears"`,
+			),
+		)
 
 		// Stdout should be empty
 		test.Equal(t, stdout.String(), "")
