@@ -147,6 +147,9 @@ func TestResolve(t *testing.T) {
 							"Content-Type": "application/json",
 							"X-User-ID":    "{{user_id}}",
 						},
+						Vars: map[string]string{
+							"something": "{{user_id}}",
+						},
 						Name:   "#1",
 						Method: "POST",
 						URL:    "{{base}}/items/1",
@@ -165,6 +168,9 @@ func TestResolve(t *testing.T) {
 						Headers: map[string]string{
 							"Content-Type": "application/json",
 							"X-User-ID":    "123",
+						},
+						Vars: map[string]string{
+							"something": "123",
 						},
 						Name:              "#1",
 						Method:            "POST",
