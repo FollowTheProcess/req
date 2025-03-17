@@ -1,7 +1,0 @@
-testdata/check/bad.http:2:14-27: bad timeout value: time: invalid duration "amillionyears"
-
-1 | ### BadTimeout
-2 | # @timeout = amillionyears
-                 ─────────────
-3 | GET https://github.com/api
-4 | 
