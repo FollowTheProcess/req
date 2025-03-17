@@ -10,10 +10,11 @@ package spec
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"maps"
+	"net/url"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/FollowTheProcess/req/internal/syntax"
@@ -57,23 +58,48 @@ type Request struct {
 func ResolveFile(in syntax.File) (File, error) {
 	resolved := File{
 		Name:              in.Name,
-		Vars:              map[string]string{},
 		Timeout:           time.Duration(in.Timeout),
 		ConnectionTimeout: time.Duration(in.ConnectionTimeout),
 		NoRedirect:        in.NoRedirect,
 	}
 
-	// TODO(@FollowTheProcess): Vars
+	// Note: We could use something like text/template but I wanted to try and be compatible with
+	// things like the VSCode rest extension which uses {{something}} syntax as opposed to Go's {{.Something}}
+
+	// TODO(@FollowTheProcess): I think we might need to do something else when it comes to things like {{ $random.uuid }}
+	// but this is fine for now
+	oldnew := make([]string, 0, len(in.Vars))
+	for key, value := range in.Vars {
+		// e.g. strings.NewReplace("{{base}}", "https://api.com")
+		oldnew = append(oldnew, fmt.Sprintf("{{%s}}", key))
+		oldnew = append(oldnew, value)
+	}
+
+	replacer := strings.NewReplacer(oldnew...)
+
+	globals := make(map[string]string, len(in.Vars))
+
+	for key, value := range in.Vars {
+		replaced, err := replaceAndValidate(replacer, value)
+		if err != nil {
+			return File{}, err
+		}
+		globals[key] = replaced
+	}
+
+	resolved.Vars = globals
 
 	resolvedRequests := make([]Request, 0, len(in.Requests))
 	for _, request := range in.Requests {
-		resolved, err := resolveRequest(request)
+		resolved, err := resolveRequest(request, globals)
 		if err != nil {
 			return File{}, fmt.Errorf("could not resolve request %s: %w", request.Name, err)
 		}
 
 		resolvedRequests = append(resolvedRequests, resolved)
 	}
+
+	resolved.Requests = resolvedRequests
 
 	// Ensure we have sensible default timeouts if none were set
 	if resolved.Timeout == 0 {
@@ -89,13 +115,90 @@ func ResolveFile(in syntax.File) (File, error) {
 
 // resolveRequest converts a [syntax.Request] to a [Request], performing variable
 // resolution and other validation.
-func resolveRequest(in syntax.Request) (Request, error) {
-	// TODO(@FollowTheProcess): All of this
-	return Request{}, errors.New("TODO")
+func resolveRequest(in syntax.Request, globals map[string]string) (Request, error) {
+	resolved := Request{
+		Name:              in.Name,
+		Method:            in.Method,
+		Timeout:           time.Duration(in.Timeout),
+		ConnectionTimeout: time.Duration(in.ConnectionTimeout),
+		NoRedirect:        in.NoRedirect,
+	}
+
+	// TODO(@FollowTheProcess): I think we should actually scan interpolation tokens in the scanner
+	// and parse them "properly"
+
+	// Replace local request scoped vars but also globals because global variables
+	// could be used in request variables
+	oldnew := make([]string, 0, len(in.Vars)+len(globals))
+	for key, value := range in.Vars {
+		// e.g. strings.NewReplace("{{request_var}}", "something")
+		oldnew = append(oldnew, fmt.Sprintf("{{%s}}", key))
+		oldnew = append(oldnew, value)
+	}
+
+	for key, value := range globals {
+		oldnew = append(oldnew, fmt.Sprintf("{{%s}}", key))
+		oldnew = append(oldnew, value)
+	}
+
+	replacer := strings.NewReplacer(oldnew...)
+
+	vars := make(map[string]string, len(in.Vars))
+	for key, value := range in.Vars {
+		replaced, err := replaceAndValidate(replacer, value)
+		if err != nil {
+			return Request{}, err
+		}
+		vars[key] = replaced
+	}
+
+	resolved.Vars = vars
+
+	headers := make(map[string]string, len(in.Headers))
+	for key, value := range in.Headers {
+		replaced, err := replaceAndValidate(replacer, value)
+		if err != nil {
+			return Request{}, err
+		}
+		headers[key] = replaced
+	}
+
+	resolved.Headers = headers
+
+	// Global vars may be used in request URL, and we can now strictly validate it
+	// as it should be absolute
+	replacedURL, err := replaceAndValidate(replacer, in.URL)
+	if err != nil {
+		return Request{}, err
+	}
+	_, err = url.ParseRequestURI(replacedURL)
+	if err != nil {
+		return Request{}, fmt.Errorf("invalid URL for request %s: %w", in.Name, err)
+	}
+
+	resolved.URL = replacedURL
+
+	replacedBody, err := replaceAndValidate(replacer, string(in.Body))
+	if err != nil {
+		return Request{}, err
+	}
+
+	resolved.Body = []byte(replacedBody)
+
+	// Ensure we have sensible default timeouts if none were set
+	if resolved.Timeout == 0 {
+		resolved.Timeout = DefaultTimeout
+	}
+
+	if resolved.ConnectionTimeout == 0 {
+		resolved.ConnectionTimeout = DefaultConnectionTimeout
+	}
+
+	return resolved, nil
 }
 
-// FileEqual reports whether two [File]s are equal.
-func FileEqual(a, b File) bool {
+// Equal reports whether two [File]s are equal.
+func Equal(a, b File) bool {
 	switch {
 	case a.Name != b.Name,
 		!maps.Equal(a.Vars, b.Vars),
@@ -113,7 +216,7 @@ func FileEqual(a, b File) bool {
 func requestEqual(a, b Request) bool {
 	switch {
 	case !maps.Equal(a.Vars, b.Vars),
-		!maps.Equal(a.Headers, a.Headers),
+		!maps.Equal(a.Headers, b.Headers),
 		a.Name != b.Name,
 		a.Method != b.Method,
 		a.URL != b.URL,
@@ -128,4 +231,28 @@ func requestEqual(a, b Request) bool {
 	default:
 		return true
 	}
+}
+
+// replaceAndValidate performs string variable replacement using the passed in replacer
+// and ensures there are no template tags remaining.
+func replaceAndValidate(replacer *strings.Replacer, in string) (out string, err error) {
+	replaced := replacer.Replace(in)
+	interpStart := strings.Index(replaced, "{{")
+	interpEnd := strings.Index(replaced, "}}")
+
+	const cutoff = 15
+	end := min(interpStart+cutoff, len(replaced)-1)
+
+	if interpStart != -1 {
+		// There are template tags remaining
+		if interpEnd == -1 {
+			// Unterminated
+			return "", fmt.Errorf("unterminated variable interpolation: %q", replaced[interpStart:end])
+		}
+
+		// Undeclared variable
+		return "", fmt.Errorf("use of undeclared variable %q in interpolation", replaced[interpStart:interpEnd+2])
+	}
+
+	return replaced, nil
 }
