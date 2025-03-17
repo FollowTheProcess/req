@@ -456,6 +456,8 @@ func TestScanBasics(t *testing.T) {
 }
 
 func TestValid(t *testing.T) {
+	test.ColorEnabled(true) // Force colour in the diffs
+
 	pattern := filepath.Join("testdata", "valid", "*.txtar")
 	files, err := filepath.Glob(pattern)
 	test.Ok(t, err)
@@ -509,6 +511,8 @@ func TestValid(t *testing.T) {
 }
 
 func TestInvalid(t *testing.T) {
+	test.ColorEnabled(true) // Force colour in the diffs
+
 	pattern := filepath.Join("testdata", "invalid", "*.txtar")
 	files, err := filepath.Glob(pattern)
 	test.Ok(t, err)

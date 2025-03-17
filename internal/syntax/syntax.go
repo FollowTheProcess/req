@@ -93,7 +93,7 @@ func (d *Duration) UnmarshalText(text []byte) error {
 // in a number of fields, URLs may not be valid etc. This is a structured
 // populated from the as-parsed text.
 type File struct {
-	Name              string            `json:"name,omitempty"`              // Name of the file
+	Name              string            `json:"name,omitempty"`              // Name of the file (or @name in global scope if given)
 	Vars              map[string]string `json:"vars,omitempty"`              // Global variables defined at the top level, e.g. base url
 	Requests          []Request         `json:"requests,omitempty"`          // 1 or more HTTP requests
 	Timeout           Duration          `json:"timeout,omitempty"`           // Global timeout for all requests

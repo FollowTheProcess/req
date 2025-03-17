@@ -24,6 +24,8 @@ var update = flag.Bool("update", false, "Update snapshots and testdata")
 // a txtar archive in testdata/valid, parses it to completion, serialises that parsed result
 // to JSON then generates a pretty diff if it doesn't match.
 func TestValid(t *testing.T) {
+	test.ColorEnabled(true) // Force colour in the diffs
+
 	pattern := filepath.Join("testdata", "valid", "*.txtar")
 	files, err := filepath.Glob(pattern)
 	test.Ok(t, err)
@@ -71,6 +73,8 @@ func TestValid(t *testing.T) {
 //
 // Additionally, the errors are compared against a reference.
 func TestInvalid(t *testing.T) {
+	test.ColorEnabled(true) // Force colour in the diffs
+
 	pattern := filepath.Join("testdata", "invalid", "*.txtar")
 	files, err := filepath.Glob(pattern)
 	test.Ok(t, err)
