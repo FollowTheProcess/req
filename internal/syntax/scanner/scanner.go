@@ -165,6 +165,7 @@ func (s *Scanner) error(msg string) {
 
 	position := syntax.Position{
 		Name:     s.name,
+		Offset:   s.pos,
 		Line:     s.line,
 		StartCol: startCol,
 		EndCol:   endCol,

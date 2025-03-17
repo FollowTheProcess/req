@@ -2,13 +2,17 @@ package req_test
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"path/filepath"
 	"testing"
 
 	"github.com/FollowTheProcess/req/internal/req"
+	"github.com/FollowTheProcess/snapshot"
 	"github.com/FollowTheProcess/test"
 )
+
+var update = flag.Bool("update", false, "Update snapshots and testdata")
 
 func TestCheck(t *testing.T) {
 	good := filepath.Join("testdata", "check", "good.http")
@@ -32,6 +36,7 @@ func TestCheck(t *testing.T) {
 	})
 
 	t.Run("bad", func(t *testing.T) {
+		snap := snapshot.New(t, snapshot.Update(*update))
 		stdout := &bytes.Buffer{}
 		stderr := &bytes.Buffer{}
 
@@ -41,8 +46,7 @@ func TestCheck(t *testing.T) {
 		test.Err(t, err)
 
 		// Stderr should have the syntax error
-		want := fmt.Sprintf("%s:2:14-27: bad timeout value: time: invalid duration %q\n", bad, "amillionyears")
-		test.Equal(t, stderr.String(), want)
+		snap.Snap(stderr)
 
 		// Stdout should be empty
 		test.Equal(t, stdout.String(), "")
