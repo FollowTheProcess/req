@@ -154,6 +154,7 @@ func (p *Parser) position() syntax.Position {
 
 	return syntax.Position{
 		Name:     p.name,
+		Offset:   p.current.Start,
 		Line:     line,
 		StartCol: startCol,
 		EndCol:   endCol,

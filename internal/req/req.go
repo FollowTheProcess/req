@@ -33,7 +33,7 @@ func (r Req) Check(file string) error {
 	}
 	defer f.Close()
 
-	parser, err := parser.New(file, f, syntax.ConsoleHandler(r.stderr))
+	parser, err := parser.New(file, f, syntax.PrettyConsoleHandler(r.stderr))
 	if err != nil {
 		return err
 	}

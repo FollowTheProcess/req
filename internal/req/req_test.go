@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/FollowTheProcess/req/internal/req"
@@ -40,9 +42,15 @@ func TestCheck(t *testing.T) {
 		err := req.Check(bad)
 		test.Err(t, err)
 
+		got := stderr.String()
+
+		// Replace \ with / on windows
+		if runtime.GOOS == "windows" {
+			got = strings.ReplaceAll(got, `\`, "/")
+		}
+
 		// Stderr should have the syntax error
-		want := fmt.Sprintf("%s:2:14-27: bad timeout value: time: invalid duration %q\n", bad, "amillionyears")
-		test.Equal(t, stderr.String(), want)
+		test.True(t, strings.Contains(got, `testdata/check/bad.http:2:14-27: bad timeout value: time: invalid duration "amillionyears"`))
 
 		// Stdout should be empty
 		test.Equal(t, stdout.String(), "")

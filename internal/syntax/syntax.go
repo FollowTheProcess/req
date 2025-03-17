@@ -4,9 +4,14 @@
 package syntax
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"os"
+	"strings"
 	"time"
+
+	"github.com/FollowTheProcess/hue"
 )
 
 // An ErrorHandler may be provided to parts of the parsing pipeline. If a syntax error is encountered and
@@ -21,6 +26,7 @@ type ErrorHandler func(pos Position, msg string)
 // the string "stdin" may be used.
 type Position struct {
 	Name     string // Filename
+	Offset   int    // Byte offset of the position from the start of the file
 	Line     int    // Line number (1 indexed)
 	StartCol int    // Start column (1 indexed)
 	EndCol   int    // End column (1 indexed), EndCol == StartCol when pointing to a single character
@@ -117,12 +123,40 @@ type Request struct {
 	NoRedirect        bool              `json:"noRedirect,omitempty"`        // Disable following redirects on this specific request, overrides global if set
 }
 
-// ConsoleHandler returns a [ErrorHandler] that formats the syntax error for
+// PrettyConsoleHandler returns a [ErrorHandler] that formats the syntax error for
 // display on the terminal to a user.
-func ConsoleHandler(w io.Writer) ErrorHandler {
+func PrettyConsoleHandler(w io.Writer) ErrorHandler {
 	return func(pos Position, msg string) {
-		// TODO(@FollowTheProcess): Make this *much* better, I want to show a nice snippet
-		// of the source text with some pretty lines and arrows highlighting source ranges etc.
-		fmt.Fprintf(w, "%s: %s\n", pos, msg)
+		// TODO(@FollowTheProcess): This is a bit better but still some improvement I think
+		fmt.Fprintf(w, "%s: %s\n\n", pos, msg)
+
+		contents, err := os.ReadFile(pos.Name)
+		if err != nil {
+			fmt.Fprintf(w, "unable to show src context: %v\n", err)
+			return
+		}
+
+		lines := bytes.Split(contents, []byte("\n"))
+
+		const contextLines = 3
+
+		startLine := max(pos.Line-contextLines, 0)
+		endLine := max(pos.Line+contextLines, len(lines))
+
+		for i, line := range lines {
+			i++ // Lines are 1 indexed
+			if i >= startLine && i <= endLine {
+				margin := fmt.Sprintf("%d | ", i)
+				fmt.Fprintf(w, "%s%s\n", margin, line)
+				if i == pos.Line {
+					hue.Red.Fprintf(
+						w,
+						"%s%s\n",
+						strings.Repeat(" ", len(margin)+pos.StartCol-1),
+						strings.Repeat("─", pos.EndCol-pos.StartCol),
+					)
+				}
+			}
+		}
 	}
 }
