@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/FollowTheProcess/req/internal/req"
@@ -45,8 +47,15 @@ func TestCheck(t *testing.T) {
 		err := req.Check(bad)
 		test.Err(t, err)
 
+		got := stderr.String()
+
+		// Replace \ with / on windows
+		if runtime.GOOS == "windows" {
+			got = strings.ReplaceAll(got, `\`, "/")
+		}
+
 		// Stderr should have the syntax error
-		snap.Snap(stderr)
+		snap.Snap(got)
 
 		// Stdout should be empty
 		test.Equal(t, stdout.String(), "")
