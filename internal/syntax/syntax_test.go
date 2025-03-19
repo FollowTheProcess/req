@@ -1,11 +1,20 @@
 package syntax_test
 
 import (
+	"flag"
 	"fmt"
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/FollowTheProcess/req/internal/syntax"
+	"github.com/FollowTheProcess/snapshot"
 	"github.com/FollowTheProcess/test"
+)
+
+var (
+	update = flag.Bool("update", false, "Update snapshots")
+	clean  = flag.Bool("clean", false, "Clean all snapshots and recreate")
 )
 
 func TestPositionString(t *testing.T) {
@@ -59,6 +68,163 @@ func TestPositionString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			test.Equal(t, tt.pos.String(), tt.want)
+		})
+	}
+}
+
+func TestFormat(t *testing.T) {
+	tests := []struct {
+		name string      // Name of the test case
+		file syntax.File // File under test
+	}{
+		{
+			name: "empty",
+			file: syntax.File{},
+		},
+		{
+			name: "name only",
+			file: syntax.File{
+				Name: "FileyMcFileFace",
+			},
+		},
+		{
+			name: "name and vars",
+			file: syntax.File{
+				Name: "SomeVars",
+				Vars: map[string]string{
+					"base":  "https://url.com/api/v1",
+					"hello": "world",
+				},
+			},
+		},
+		{
+			name: "non default timeouts",
+			file: syntax.File{
+				Name:              "Timeouts",
+				Timeout:           42 * time.Second,
+				ConnectionTimeout: 12 * time.Second,
+			},
+		},
+		{
+			name: "no redirect",
+			file: syntax.File{
+				Name:       "NoRedirect",
+				NoRedirect: true,
+			},
+		},
+		{
+			name: "with simple request",
+			file: syntax.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []syntax.Request{
+					{
+						Name:   "A simple request",
+						Method: http.MethodGet,
+						URL:    "https://api.com/v1/items/123",
+					},
+				},
+			},
+		},
+		{
+			name: "request headers",
+			file: syntax.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []syntax.Request{
+					{
+						Name:   "Another Request",
+						Method: http.MethodPost,
+						URL:    "https://api.com/v1/items/123",
+						Headers: map[string]string{
+							"Accept":        "application/json",
+							"Content-Type":  "application/json",
+							"Authorization": "Bearer xxxxx",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "request with timeouts",
+			file: syntax.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []syntax.Request{
+					{
+						Name:              "Another Request",
+						Method:            http.MethodPost,
+						URL:               "https://api.com/v1/items/123",
+						Timeout:           3 * time.Second,
+						ConnectionTimeout: 500 * time.Millisecond,
+						NoRedirect:        true,
+					},
+				},
+			},
+		},
+		{
+			name: "request with body file",
+			file: syntax.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []syntax.Request{
+					{
+						Name:     "Another Request",
+						Method:   http.MethodPost,
+						URL:      "https://api.com/v1/items/123",
+						BodyFile: "./body.json",
+					},
+				},
+			},
+		},
+		{
+			name: "request with body",
+			file: syntax.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []syntax.Request{
+					{
+						Name:   "Another Request",
+						Method: http.MethodPost,
+						URL:    "https://api.com/v1/items/123",
+						Body:   []byte(`{"some": "json", "here": "yes"}`),
+					},
+				},
+			},
+		},
+		{
+			name: "request with response ref",
+			file: syntax.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []syntax.Request{
+					{
+						Name:        "Another Request",
+						Method:      http.MethodPost,
+						URL:         "https://api.com/v1/items/123",
+						ResponseRef: "./previous.200.json",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			snap := snapshot.New(t, snapshot.Update(*update), snapshot.Clean(*clean))
+			snap.Snap(tt.file.String())
 		})
 	}
 }

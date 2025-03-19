@@ -7,7 +7,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"maps"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -76,23 +78,6 @@ func (p Position) String() string {
 	return fmt.Sprintf("%s:%d:%d-%d", p.Name, p.Line, p.StartCol, p.EndCol)
 }
 
-// Duration is a [time.Duration] but more JSON friendly.
-type Duration time.Duration
-
-func (d Duration) MarshalText() ([]byte, error) {
-	return []byte(time.Duration(d).String()), nil
-}
-
-func (d *Duration) UnmarshalText(text []byte) error {
-	duration, err := time.ParseDuration(string(text))
-	if err != nil {
-		return err
-	}
-
-	*d = Duration(duration)
-	return nil
-}
-
 // File represents a single .http file as parsed.
 //
 // It is *nearly* concrete but may have variable interpolation still to evaluate
@@ -102,8 +87,8 @@ type File struct {
 	Name              string            `json:"name,omitempty"`              // Name of the file (or @name in global scope if given)
 	Vars              map[string]string `json:"vars,omitempty"`              // Global variables defined at the top level, e.g. base url
 	Requests          []Request         `json:"requests,omitempty"`          // 1 or more HTTP requests
-	Timeout           Duration          `json:"timeout,omitempty"`           // Global timeout for all requests
-	ConnectionTimeout Duration          `json:"connectionTimeout,omitempty"` // Global connection timeout
+	Timeout           time.Duration     `json:"timeout,omitempty"`           // Global timeout for all requests
+	ConnectionTimeout time.Duration     `json:"connectionTimeout,omitempty"` // Global connection timeout
 	NoRedirect        bool              `json:"noRedirect,omitempty"`        // Disable following redirects globally
 }
 
@@ -118,9 +103,101 @@ type Request struct {
 	BodyFile          string            `json:"bodyFile,omitempty"`          // If the body is to be populated from a local file, this is the path to that file (relative to the .http file)
 	ResponseRef       string            `json:"responseRef,omitempty"`       // If a response reference was provided, this is it's filepath (relative to the .http file)
 	Body              []byte            `json:"body,omitempty"`              // Request body, if provided inline. Again, may have variable interpolation and special things like {{ $uuid }}
-	Timeout           Duration          `json:"timeout,omitempty"`           // Request specific timeout, overrides global if set
-	ConnectionTimeout Duration          `json:"connectionTimeout,omitempty"` // Request specific connection timeout, overrides global if set
+	Timeout           time.Duration     `json:"timeout,omitempty"`           // Request specific timeout, overrides global if set
+	ConnectionTimeout time.Duration     `json:"connectionTimeout,omitempty"` // Request specific connection timeout, overrides global if set
 	NoRedirect        bool              `json:"noRedirect,omitempty"`        // Disable following redirects on this specific request, overrides global if set
+}
+
+// String implements [fmt.Stringer] for [File].
+func (f File) String() string {
+	builder := &strings.Builder{}
+
+	if f.Name != "" {
+		fmt.Fprintf(builder, "@name = %s\n\n", f.Name)
+	}
+
+	for _, key := range slices.Sorted(maps.Keys(f.Vars)) {
+		fmt.Fprintf(builder, "# @%s = %s\n", key, f.Vars[key])
+	}
+
+	// Only show timeouts if they are non-default
+	if f.Timeout != 0 {
+		fmt.Fprintf(builder, "@timeout = %s\n", f.Timeout)
+	}
+
+	if f.ConnectionTimeout != 0 {
+		fmt.Fprintf(builder, "@connection-timeout = %s\n", f.ConnectionTimeout)
+	}
+
+	// Same with no-redirect
+	if f.NoRedirect {
+		fmt.Fprintf(builder, "@no-redirect = %v\n", f.NoRedirect)
+	}
+
+	// Separate the request start from the globals by a newline
+	builder.WriteByte('\n')
+
+	for _, request := range f.Requests {
+		builder.WriteString(request.String())
+	}
+
+	return builder.String()
+}
+
+// String implements [fmt.Stringer] for [Request].
+func (r Request) String() string {
+	builder := &strings.Builder{}
+
+	if r.Name != "" {
+		fmt.Fprintf(builder, "### %s\n", r.Name)
+	}
+
+	for _, key := range slices.Sorted(maps.Keys(r.Vars)) {
+		fmt.Fprintf(builder, "# @%s = %s\n", key, r.Vars[key])
+	}
+
+	// Only show timeouts if they are non-default
+	if r.Timeout != 0 {
+		fmt.Fprintf(builder, "# @timeout = %s\n", r.Timeout)
+	}
+
+	if r.ConnectionTimeout != 0 {
+		fmt.Fprintf(builder, "# @connection-timeout = %s\n", r.ConnectionTimeout)
+	}
+
+	// Same with no-redirect
+	if r.NoRedirect {
+		fmt.Fprintf(builder, "# @no-redirect = %v\n", r.NoRedirect)
+	}
+
+	if r.HTTPVersion != "" {
+		fmt.Fprintf(builder, "%s %s %s\n", r.Method, r.URL, r.HTTPVersion)
+	} else {
+		fmt.Fprintf(builder, "%s %s\n", r.Method, r.URL)
+	}
+
+	for _, key := range slices.Sorted(maps.Keys(r.Headers)) {
+		fmt.Fprintf(builder, "# @%s = %s\n", key, r.Headers[key])
+	}
+
+	// Separate the body section
+	if r.Body != nil || r.BodyFile != "" || r.ResponseRef != "" {
+		builder.WriteString("\n")
+	}
+
+	if r.BodyFile != "" {
+		fmt.Fprintf(builder, "< %s\n", r.BodyFile)
+	}
+
+	if r.Body != nil {
+		fmt.Fprintf(builder, "%s\n", string(r.Body))
+	}
+
+	if r.ResponseRef != "" {
+		fmt.Fprintf(builder, "<> %s\n", r.ResponseRef)
+	}
+
+	return builder.String()
 }
 
 // PrettyConsoleHandler returns a [ErrorHandler] that formats the syntax error for

@@ -1,0 +1,30 @@
+@name = Requests
+
+@token = shhh
+@base = https://api.com/v1
+
+### Post items
+POST {{base}}/items/123
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "hello": "yes",
+    "this": [
+        "is",
+        "some",
+        "stuff"
+    ],
+    "nested": {
+        "oh": "yes"
+    }
+}
+
+<> response.200.json
+
+### Get item
+GET {{base}}/items/123
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}

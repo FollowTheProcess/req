@@ -187,7 +187,7 @@ func (p *Parser) text() string {
 // parseDuration parses a duration declaration e.g. in a global or request variable.
 //
 // It assumes the '@ident' has already been consumed.
-func (p *Parser) parseDuration() syntax.Duration {
+func (p *Parser) parseDuration() time.Duration {
 	p.advance()
 	// Can either be @timeout = 20s or @timeout 20s
 	if p.next.Kind == token.Eq {
@@ -200,7 +200,7 @@ func (p *Parser) parseDuration() syntax.Duration {
 		p.errorf("bad timeout value: %v", err)
 	}
 
-	return syntax.Duration(duration)
+	return duration
 }
 
 // parseName parses a name declaration e.g. in a global or request variable.

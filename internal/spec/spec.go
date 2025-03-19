@@ -53,13 +53,105 @@ type Request struct {
 	NoRedirect        bool              `json:"noRedirect,omitempty"`        // Disable following redirects on this specific request, overrides global if set
 }
 
+// String implements [fmt.Stringer] for [File].
+func (f File) String() string {
+	builder := &strings.Builder{}
+
+	if f.Name != "" {
+		fmt.Fprintf(builder, "@name = %s\n\n", f.Name)
+	}
+
+	for _, key := range slices.Sorted(maps.Keys(f.Vars)) {
+		fmt.Fprintf(builder, "# @%s = %s\n", key, f.Vars[key])
+	}
+
+	// Only show timeouts if they are non-default
+	if f.Timeout != DefaultTimeout && f.Timeout != 0 {
+		fmt.Fprintf(builder, "@timeout = %s\n", f.Timeout)
+	}
+
+	if f.ConnectionTimeout != DefaultConnectionTimeout && f.ConnectionTimeout != 0 {
+		fmt.Fprintf(builder, "@connection-timeout = %s\n", f.ConnectionTimeout)
+	}
+
+	// Same with no-redirect
+	if f.NoRedirect {
+		fmt.Fprintf(builder, "@no-redirect = %v\n", f.NoRedirect)
+	}
+
+	// Separate the request start from the globals by a newline
+	builder.WriteByte('\n')
+
+	for _, request := range f.Requests {
+		builder.WriteString(request.String())
+	}
+
+	return builder.String()
+}
+
+// String implements [fmt.Stringer] for [Request].
+func (r Request) String() string {
+	builder := &strings.Builder{}
+
+	if r.Name != "" {
+		fmt.Fprintf(builder, "### %s\n", r.Name)
+	}
+
+	for _, key := range slices.Sorted(maps.Keys(r.Vars)) {
+		fmt.Fprintf(builder, "# @%s = %s\n", key, r.Vars[key])
+	}
+
+	// Only show timeouts if they are non-default
+	if r.Timeout != DefaultTimeout && r.Timeout != 0 {
+		fmt.Fprintf(builder, "# @timeout = %s\n", r.Timeout)
+	}
+
+	if r.ConnectionTimeout != DefaultConnectionTimeout && r.ConnectionTimeout != 0 {
+		fmt.Fprintf(builder, "# @connection-timeout = %s\n", r.ConnectionTimeout)
+	}
+
+	// Same with no-redirect
+	if r.NoRedirect {
+		fmt.Fprintf(builder, "# @no-redirect = %v\n", r.NoRedirect)
+	}
+
+	if r.HTTPVersion != "" {
+		fmt.Fprintf(builder, "%s %s %s\n", r.Method, r.URL, r.HTTPVersion)
+	} else {
+		fmt.Fprintf(builder, "%s %s\n", r.Method, r.URL)
+	}
+
+	for _, key := range slices.Sorted(maps.Keys(r.Headers)) {
+		fmt.Fprintf(builder, "# @%s = %s\n", key, r.Headers[key])
+	}
+
+	// Separate the body section
+	if r.Body != nil || r.BodyFile != "" || r.ResponseRef != "" {
+		builder.WriteString("\n")
+	}
+
+	if r.BodyFile != "" {
+		fmt.Fprintf(builder, "< %s\n", r.BodyFile)
+	}
+
+	if r.Body != nil {
+		fmt.Fprintf(builder, "%s\n", string(r.Body))
+	}
+
+	if r.ResponseRef != "" {
+		fmt.Fprintf(builder, "<> %s\n", r.ResponseRef)
+	}
+
+	return builder.String()
+}
+
 // ResolveFile converts a [syntax.File] to a [File], performing variable
 // resolution and other validation.
 func ResolveFile(in syntax.File) (File, error) {
 	resolved := File{
 		Name:              in.Name,
-		Timeout:           time.Duration(in.Timeout),
-		ConnectionTimeout: time.Duration(in.ConnectionTimeout),
+		Timeout:           in.Timeout,
+		ConnectionTimeout: in.ConnectionTimeout,
 		NoRedirect:        in.NoRedirect,
 	}
 
@@ -119,8 +211,8 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 	resolved := Request{
 		Name:              in.Name,
 		Method:            in.Method,
-		Timeout:           time.Duration(in.Timeout),
-		ConnectionTimeout: time.Duration(in.ConnectionTimeout),
+		Timeout:           in.Timeout,
+		ConnectionTimeout: in.ConnectionTimeout,
 		NoRedirect:        in.NoRedirect,
 	}
 

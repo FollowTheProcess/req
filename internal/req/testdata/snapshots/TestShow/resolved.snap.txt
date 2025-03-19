@@ -1,0 +1,31 @@
+@name = Requests
+
+# @base = https://api.com/v1
+# @token = shhh
+
+### Post items
+POST https://api.com/v1/items/123
+# @Accept = application/json
+# @Authorization = Bearer shhh
+# @Content-Type = application/json
+
+{
+    "hello": "yes",
+    "this": [
+        "is",
+        "some",
+        "stuff"
+    ],
+    "nested": {
+        "oh": "yes"
+    }
+}
+
+<> response.200.json
+
+
+### Get item
+GET https://api.com/v1/items/123
+# @Accept = application/json
+# @Authorization = Bearer shhh
+# @Content-Type = application/json
