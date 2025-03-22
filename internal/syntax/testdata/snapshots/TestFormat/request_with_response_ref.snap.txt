@@ -1,6 +1,6 @@
 @name = Requests
 
-# @base = https://api.com/v1
+@base = https://api.com/v1
 
 ### Another Request
 POST https://api.com/v1/items/123

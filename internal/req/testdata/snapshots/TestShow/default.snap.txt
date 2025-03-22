@@ -1,13 +1,13 @@
 @name = Requests
 
-# @base = https://api.com/v1
-# @token = shhh
+@base = https://api.com/v1
+@token = shhh
 
 ### Post items
 POST {{base}}/items/123
-# @Accept = application/json
-# @Authorization = Bearer {{token}}
-# @Content-Type = application/json
+Accept: application/json
+Authorization: Bearer {{token}}
+Content-Type: application/json
 
 {
     "hello": "yes",
@@ -26,6 +26,6 @@ POST {{base}}/items/123
 
 ### Get item
 GET {{base}}/items/123
-# @Accept = application/json
-# @Authorization = Bearer {{token}}
-# @Content-Type = application/json
+Accept: application/json
+Authorization: Bearer {{token}}
+Content-Type: application/json

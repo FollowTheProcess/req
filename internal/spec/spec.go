@@ -62,7 +62,7 @@ func (f File) String() string {
 	}
 
 	for _, key := range slices.Sorted(maps.Keys(f.Vars)) {
-		fmt.Fprintf(builder, "# @%s = %s\n", key, f.Vars[key])
+		fmt.Fprintf(builder, "@%s = %s\n", key, f.Vars[key])
 	}
 
 	// Only show timeouts if they are non-default
@@ -122,7 +122,7 @@ func (r Request) String() string {
 	}
 
 	for _, key := range slices.Sorted(maps.Keys(r.Headers)) {
-		fmt.Fprintf(builder, "# @%s = %s\n", key, r.Headers[key])
+		fmt.Fprintf(builder, "%s: %s\n", key, r.Headers[key])
 	}
 
 	// Separate the body section
