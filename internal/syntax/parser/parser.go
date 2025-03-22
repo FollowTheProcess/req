@@ -181,7 +181,7 @@ func (p *Parser) errorf(format string, a ...any) {
 
 // text returns the chunk of source text described by the p.current token.
 func (p *Parser) text() string {
-	return string(p.src[p.current.Start:p.current.End])
+	return strings.TrimSpace(string(p.src[p.current.Start:p.current.End]))
 }
 
 // parseDuration parses a duration declaration e.g. in a global or request variable.
