@@ -29,7 +29,7 @@ func Build() (*cli.Command, error) {
 			fmt.Println("Fun things coming soon...")
 			return nil
 		}),
-		cli.SubCommands(check, show),
+		cli.SubCommands(check, show, do),
 	)
 }
 
@@ -37,11 +37,11 @@ func Build() (*cli.Command, error) {
 func check() (*cli.Command, error) {
 	return cli.New(
 		"check",
-		cli.Short("Check a .http file for syntax errors"),
-		cli.RequiredArg("file", "Path of the .http file to check"),
+		cli.Short("Check .http files for syntax errors"),
+		cli.Allow(cli.MinArgs(1)),
 		cli.Run(func(cmd *cli.Command, args []string) error {
 			req := req.New(cmd.Stdout(), cmd.Stderr())
-			return req.Check(cmd.Arg("file"))
+			return req.Check(args)
 		}),
 	)
 }
@@ -58,6 +58,41 @@ func show() (*cli.Command, error) {
 		cli.Run(func(cmd *cli.Command, args []string) error {
 			req := req.New(cmd.Stdout(), cmd.Stderr())
 			return req.Show(cmd.Arg("file"), options)
+		}),
+	)
+}
+
+const doLong = `
+The request headers, body and other settings will be taken from the
+file but may be overridden by the use of command line flags like
+'--timeout' etc.
+
+Responses can be saved to a file with the '--output' flag.
+`
+
+// do returns the do subcommand.
+func do() (*cli.Command, error) {
+	var options req.DoOptions
+	return cli.New(
+		"do",
+		cli.Short("Execute a http request from a file"),
+		cli.Long(doLong),
+		cli.RequiredArg("file", ".http file containing the request"),
+		cli.RequiredArg("name", "The name of the request to send"),
+		cli.Flag(&options.Timeout, "timeout", cli.NoShortHand, 0, "Timeout for the request"),
+		cli.Flag(
+			&options.ConnectionTimeout,
+			"connection-timeout",
+			cli.NoShortHand,
+			0,
+			"Connection timeout for the request",
+		),
+		cli.Flag(&options.NoRedirect, "no-redirect", cli.NoShortHand, false, "Disable following redirects"),
+		cli.Flag(&options.Output, "output", 'o', "", "Name of a file to save the response"),
+		cli.Flag(&options.Verbose, "verbose", 'v', false, "Enable debug logging"),
+		cli.Run(func(cmd *cli.Command, args []string) error {
+			req := req.New(cmd.Stdout(), cmd.Stderr())
+			return req.Do(cmd.Arg("file"), cmd.Arg("name"), options)
 		}),
 	)
 }

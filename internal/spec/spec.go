@@ -89,6 +89,17 @@ func (f File) String() string {
 	return builder.String()
 }
 
+// GetRequest returns the request by name from a File.
+func (f File) GetRequest(name string) (Request, bool) {
+	for _, request := range f.Requests {
+		if request.Name == name {
+			return request, true
+		}
+	}
+
+	return Request{}, false
+}
+
 // String implements [fmt.Stringer] for [Request].
 func (r Request) String() string {
 	builder := &strings.Builder{}

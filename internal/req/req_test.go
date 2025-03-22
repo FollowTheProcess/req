@@ -22,7 +22,7 @@ func TestCheck(t *testing.T) {
 
 		req := req.New(stdout, stderr)
 
-		err := req.Check(good)
+		err := req.Check([]string{good})
 		test.Ok(t, err)
 
 		// Stderr should be empty
@@ -39,7 +39,7 @@ func TestCheck(t *testing.T) {
 
 		req := req.New(stdout, stderr)
 
-		err := req.Check(bad)
+		err := req.Check([]string{bad})
 		test.Err(t, err)
 
 		got := stderr.String()

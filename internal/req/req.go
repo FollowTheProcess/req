@@ -2,11 +2,16 @@
 package req
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/FollowTheProcess/msg"
 	"github.com/FollowTheProcess/req/internal/spec"
@@ -29,24 +34,30 @@ func New(stdout, stderr io.Writer) Req {
 }
 
 // Check implements the `req check` subcommand.
-func (r Req) Check(file string) error {
-	f, err := os.Open(file)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+func (r Req) Check(files []string) error {
+	for _, file := range files {
+		return func() error {
+			f, err := os.Open(file)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
 
-	parser, err := parser.New(file, f, syntax.PrettyConsoleHandler(r.stderr))
-	if err != nil {
-		return err
+			parser, err := parser.New(file, f, syntax.PrettyConsoleHandler(r.stderr))
+			if err != nil {
+				return err
+			}
+
+			_, err = parser.Parse()
+			if err != nil {
+				return fmt.Errorf("%w: %s is not valid http syntax", err, file)
+			}
+
+			msg.Fsuccess(r.stdout, "%s is valid", file)
+			return nil
+		}()
 	}
 
-	_, err = parser.Parse()
-	if err != nil {
-		return fmt.Errorf("%w: %s is not valid http syntax", err, file)
-	}
-
-	msg.Fsuccess(r.stdout, "%s is valid", file)
 	return nil
 }
 
@@ -93,5 +104,85 @@ func (r Req) Show(file string, options ShowOptions) error {
 	}
 
 	fmt.Fprintln(r.stdout, strings.TrimSpace(raw.String()))
+	return nil
+}
+
+// DoOptions are the flags passed to the `req do` subcommand.
+type DoOptions struct {
+	Output            string
+	Timeout           time.Duration
+	ConnectionTimeout time.Duration
+	NoRedirect        bool
+	Verbose           bool
+}
+
+// Do implements the `req do` subcommand.
+func (r Req) Do(file, name string, options DoOptions) error {
+	// TODO(@FollowTheProcess): Make an integration test that spins up a fake server and make
+	// a .http file that points to that URL and make sure we get the right stuff
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	parser, err := parser.New(file, f, syntax.PrettyConsoleHandler(r.stderr))
+	if err != nil {
+		return err
+	}
+
+	raw, err := parser.Parse()
+	if err != nil {
+		return fmt.Errorf("%w: %s is not valid http syntax", err, file)
+	}
+
+	resolved, err := spec.ResolveFile(raw)
+	if err != nil {
+		return err
+	}
+
+	request, ok := resolved.GetRequest(name)
+	if !ok {
+		return fmt.Errorf("%s does not contain request %s", file, name)
+	}
+
+	// TODO(@FollowTheProcess): A context with a timeout and listens to ctrl+c
+	httpRequest, err := http.NewRequestWithContext(
+		context.TODO(),
+		request.Method,
+		request.URL,
+		bytes.NewReader(request.Body),
+	)
+	if err != nil {
+		return err
+	}
+
+	for key, value := range request.Headers {
+		httpRequest.Header.Add(key, value)
+	}
+
+	// TODO(@FollowTheProcess): Make a proper http client
+	client := http.Client{
+		Timeout: request.Timeout,
+	}
+
+	response, err := client.Do(httpRequest)
+	if err != nil {
+		return fmt.Errorf("HTTP: %w", err)
+	}
+
+	if response == nil {
+		return errors.New("nil response")
+	}
+
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(response.Status)
+	fmt.Println(string(body))
 	return nil
 }
