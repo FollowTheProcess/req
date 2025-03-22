@@ -2,11 +2,20 @@ package spec_test
 
 import (
 	"encoding/json"
+	"flag"
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/FollowTheProcess/req/internal/spec"
 	"github.com/FollowTheProcess/req/internal/syntax"
+	"github.com/FollowTheProcess/snapshot"
 	"github.com/FollowTheProcess/test"
+)
+
+var (
+	update = flag.Bool("update", false, "Update snapshots")
+	clean  = flag.Bool("clean", false, "Clean all snapshots and recreate")
 )
 
 func TestResolve(t *testing.T) {
@@ -210,6 +219,163 @@ func TestResolve(t *testing.T) {
 
 				test.DiffBytes(t, gotJSON, wantJSON)
 			}
+		})
+	}
+}
+
+func TestFormat(t *testing.T) {
+	tests := []struct {
+		name string    // Name of the test case
+		file spec.File // File under test
+	}{
+		{
+			name: "empty",
+			file: spec.File{},
+		},
+		{
+			name: "name only",
+			file: spec.File{
+				Name: "FileyMcFileFace",
+			},
+		},
+		{
+			name: "name and vars",
+			file: spec.File{
+				Name: "SomeVars",
+				Vars: map[string]string{
+					"base":  "https://url.com/api/v1",
+					"hello": "world",
+				},
+			},
+		},
+		{
+			name: "non default timeouts",
+			file: spec.File{
+				Name:              "Timeouts",
+				Timeout:           42 * time.Second,
+				ConnectionTimeout: 12 * time.Second,
+			},
+		},
+		{
+			name: "no redirect",
+			file: spec.File{
+				Name:       "NoRedirect",
+				NoRedirect: true,
+			},
+		},
+		{
+			name: "with simple request",
+			file: spec.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []spec.Request{
+					{
+						Name:   "A simple request",
+						Method: http.MethodGet,
+						URL:    "https://api.com/v1/items/123",
+					},
+				},
+			},
+		},
+		{
+			name: "request headers",
+			file: spec.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []spec.Request{
+					{
+						Name:   "Another Request",
+						Method: http.MethodPost,
+						URL:    "https://api.com/v1/items/123",
+						Headers: map[string]string{
+							"Accept":        "application/json",
+							"Content-Type":  "application/json",
+							"Authorization": "Bearer xxxxx",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "request with timeouts",
+			file: spec.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []spec.Request{
+					{
+						Name:              "Another Request",
+						Method:            http.MethodPost,
+						URL:               "https://api.com/v1/items/123",
+						Timeout:           3 * time.Second,
+						ConnectionTimeout: 500 * time.Millisecond,
+						NoRedirect:        true,
+					},
+				},
+			},
+		},
+		{
+			name: "request with body file",
+			file: spec.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []spec.Request{
+					{
+						Name:     "Another Request",
+						Method:   http.MethodPost,
+						URL:      "https://api.com/v1/items/123",
+						BodyFile: "./body.json",
+					},
+				},
+			},
+		},
+		{
+			name: "request with body",
+			file: spec.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []spec.Request{
+					{
+						Name:   "Another Request",
+						Method: http.MethodPost,
+						URL:    "https://api.com/v1/items/123",
+						Body:   []byte(`{"some": "json", "here": "yes"}`),
+					},
+				},
+			},
+		},
+		{
+			name: "request with response ref",
+			file: spec.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []spec.Request{
+					{
+						Name:        "Another Request",
+						Method:      http.MethodPost,
+						URL:         "https://api.com/v1/items/123",
+						ResponseRef: "./previous.200.json",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			snap := snapshot.New(t, snapshot.Update(*update), snapshot.Clean(*clean))
+			snap.Snap(tt.file.String())
 		})
 	}
 }

@@ -40,8 +40,8 @@ Authorization: Bearer {{token}}
       "url": "https://api.somewhere.com/items/1",
       "httpVersion": "HTTP/2",
       "body": "ewogICJoZXJlIjogWwogICAgImFyYml0cmFyeSIsCiAgICAianNvbiIKICBdLAogICJpc19hbGxvd2VkIjogewogICAgImluY2x1ZGluZyI6IHsKICAgICAgIm5lc3RlZCI6IFsKICAgICAgICAibGlzdHMiCiAgICAgIF0KICAgIH0KICB9LAogICJzb21lIjogInN0dWZmIgp9Cg==",
-      "timeout": "30s",
-      "connectionTimeout": "10s",
+      "timeout": 30000000000,
+      "connectionTimeout": 10000000000,
       "noRedirect": true
     }
   ]

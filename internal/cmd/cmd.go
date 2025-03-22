@@ -29,7 +29,7 @@ func Build() (*cli.Command, error) {
 			fmt.Println("Fun things coming soon...")
 			return nil
 		}),
-		cli.SubCommands(check),
+		cli.SubCommands(check, show),
 	)
 }
 
@@ -42,6 +42,22 @@ func check() (*cli.Command, error) {
 		cli.Run(func(cmd *cli.Command, args []string) error {
 			req := req.New(cmd.Stdout(), cmd.Stderr())
 			return req.Check(cmd.Arg("file"))
+		}),
+	)
+}
+
+// show returns the show subcommand.
+func show() (*cli.Command, error) {
+	var options req.ShowOptions
+	return cli.New(
+		"show",
+		cli.Short("Show the contents of a .http file"),
+		cli.RequiredArg("file", "Path of the .http file"),
+		cli.Flag(&options.Resolve, "resolve", 'r', false, "Resolve the file handling variable interpolation etc."),
+		cli.Flag(&options.JSON, "json", 'j', false, "Output the file as JSON"),
+		cli.Run(func(cmd *cli.Command, args []string) error {
+			req := req.New(cmd.Stdout(), cmd.Stderr())
+			return req.Show(cmd.Arg("file"), options)
 		}),
 	)
 }
