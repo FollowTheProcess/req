@@ -1,3 +1,0 @@
-### Ping
-GET https://jsonplaceholder.typicode.com/todos/1
-Accept: application/json

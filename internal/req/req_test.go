@@ -3,6 +3,9 @@ package req_test
 import (
 	"bytes"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -61,4 +64,37 @@ func TestCheck(t *testing.T) {
 		// Stdout should be empty
 		test.Equal(t, stdout.String(), "")
 	})
+}
+
+func TestDo(t *testing.T) {
+	testHandler := func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"stuff": "here"}`)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(testHandler))
+	defer server.Close()
+
+	httpFile := fmt.Sprintf(`### Test
+GET %s
+Accept: application/json
+`, server.URL)
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	app := req.New(stdout, stderr)
+
+	file, err := os.CreateTemp(t.TempDir(), "test*.http")
+	test.Ok(t, err)
+
+	_, err = file.WriteString(httpFile)
+	test.Ok(t, err)
+	test.Ok(t, file.Close())
+
+	options := req.DoOptions{}
+
+	err = app.Do(file.Name(), "Test", options)
+	test.Ok(t, err)
+
+	test.Equal(t, stdout.String(), "200 OK\n{\"stuff\": \"here\"}\n")
 }

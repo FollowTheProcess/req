@@ -118,8 +118,6 @@ type DoOptions struct {
 
 // Do implements the `req do` subcommand.
 func (r Req) Do(file, name string, options DoOptions) error {
-	// TODO(@FollowTheProcess): Make an integration test that spins up a fake server and make
-	// a .http file that points to that URL and make sure we get the right stuff
 	f, err := os.Open(file)
 	if err != nil {
 		return err
@@ -161,7 +159,7 @@ func (r Req) Do(file, name string, options DoOptions) error {
 		httpRequest.Header.Add(key, value)
 	}
 
-	// TODO(@FollowTheProcess): Make a proper http client
+	// TODO(@FollowTheProcess): Make a proper http client elsewhere
 	client := http.Client{
 		Timeout: request.Timeout,
 	}
@@ -182,7 +180,7 @@ func (r Req) Do(file, name string, options DoOptions) error {
 		return err
 	}
 
-	fmt.Println(response.Status)
-	fmt.Println(string(body))
+	fmt.Fprintln(r.stdout, response.Status)
+	fmt.Fprintln(r.stdout, string(body))
 	return nil
 }
