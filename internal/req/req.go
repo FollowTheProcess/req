@@ -21,6 +21,8 @@ import (
 	"github.com/charmbracelet/log"
 )
 
+// TODO(@FollowTheProcess): A command that takes an OpenAPI schema and dumps it to .http file(s)
+
 // Req holds the state of the program.
 type Req struct {
 	stdout io.Writer
