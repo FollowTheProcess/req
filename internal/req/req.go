@@ -17,26 +17,93 @@ import (
 	"github.com/FollowTheProcess/req/internal/spec"
 	"github.com/FollowTheProcess/req/internal/syntax"
 	"github.com/FollowTheProcess/req/internal/syntax/parser"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 // Req holds the state of the program.
 type Req struct {
-	stdout io.Writer // Normal program output is written here
-	stderr io.Writer // Logs and debug info
+	stdout io.Writer
+	stderr io.Writer
+	logger *log.Logger
 }
 
 // New returns a new instance of [Req].
-func New(stdout, stderr io.Writer) Req {
+func New(stdout, stderr io.Writer, debug bool) Req {
+	const width = 5
+
+	level := log.InfoLevel
+	if debug {
+		level = log.DebugLevel
+	}
+
+	logger := log.NewWithOptions(stderr, log.Options{
+		ReportTimestamp: true,
+		Level:           level,
+	})
+
+	// Largely the default styles but with a default MaxWidth of 5 so as to not cutoff
+	// DEBUG or ERROR
+	logger.SetStyles(&log.Styles{
+		Timestamp: lipgloss.NewStyle(),
+		Caller:    lipgloss.NewStyle().Faint(true),
+		Prefix:    lipgloss.NewStyle().Bold(true).Faint(true),
+		Message:   lipgloss.NewStyle(),
+		Key:       lipgloss.NewStyle().Faint(true),
+		Value:     lipgloss.NewStyle(),
+		Separator: lipgloss.NewStyle().Faint(true),
+		Levels: map[log.Level]lipgloss.Style{
+			log.DebugLevel: lipgloss.NewStyle().
+				SetString(strings.ToUpper(log.DebugLevel.String())).
+				Bold(true).
+				MaxWidth(width).
+				Foreground(lipgloss.Color("63")),
+			log.InfoLevel: lipgloss.NewStyle().
+				SetString(strings.ToUpper(log.InfoLevel.String())).
+				Bold(true).
+				MaxWidth(width).
+				Foreground(lipgloss.Color("86")),
+			log.WarnLevel: lipgloss.NewStyle().
+				SetString(strings.ToUpper(log.WarnLevel.String())).
+				Bold(true).
+				MaxWidth(width).
+				Foreground(lipgloss.Color("192")),
+			log.ErrorLevel: lipgloss.NewStyle().
+				SetString(strings.ToUpper(log.ErrorLevel.String())).
+				Bold(true).
+				MaxWidth(width).
+				Foreground(lipgloss.Color("204")),
+			log.FatalLevel: lipgloss.NewStyle().
+				SetString(strings.ToUpper(log.FatalLevel.String())).
+				Bold(true).
+				MaxWidth(width).
+				Foreground(lipgloss.Color("134")),
+		},
+		Keys:   map[string]lipgloss.Style{},
+		Values: map[string]lipgloss.Style{},
+	})
+
 	return Req{
 		stdout: stdout,
 		stderr: stderr,
+		logger: logger,
 	}
 }
 
+// CheckOptions are the flags passed to the check subcommand.
+type CheckOptions struct {
+	Verbose bool // Enable debug logs
+}
+
 // Check implements the `req check` subcommand.
-func (r Req) Check(files []string) error {
+func (r Req) Check(files []string, options CheckOptions) error {
+	logger := r.logger.WithPrefix("check")
+	overallStart := time.Now()
+
 	for _, file := range files {
+		logger.Debug("Checking", "file", file)
 		return func() error {
+			start := time.Now()
 			f, err := os.Open(file)
 			if err != nil {
 				return err
@@ -54,10 +121,12 @@ func (r Req) Check(files []string) error {
 			}
 
 			msg.Fsuccess(r.stdout, "%s is valid", file)
+			logger.Debug("Took", "duration", time.Since(start))
 			return nil
 		}()
 	}
 
+	logger.Debug("Took (overall)", "duration", time.Since(overallStart))
 	return nil
 }
 
@@ -65,6 +134,7 @@ func (r Req) Check(files []string) error {
 type ShowOptions struct {
 	Resolve bool // Resolve variables and do replacements
 	JSON    bool // Output the file in JSON
+	Verbose bool // Enable debug logs
 }
 
 // Show implements the `req show` subcommand.
@@ -118,6 +188,9 @@ type DoOptions struct {
 
 // Do implements the `req do` subcommand.
 func (r Req) Do(file, name string, options DoOptions) error {
+	logger := r.logger.WithPrefix("do").With("file", file, "request", name)
+	parseStart := time.Now()
+
 	f, err := os.Open(file)
 	if err != nil {
 		return err
@@ -144,6 +217,8 @@ func (r Req) Do(file, name string, options DoOptions) error {
 		return fmt.Errorf("%s does not contain request %s", file, name)
 	}
 
+	logger.Debug("Parsed file", "duration", time.Since(parseStart))
+
 	// TODO(@FollowTheProcess): A context with a timeout and listens to ctrl+c
 	httpRequest, err := http.NewRequestWithContext(
 		context.TODO(),
@@ -164,6 +239,9 @@ func (r Req) Do(file, name string, options DoOptions) error {
 		Timeout: request.Timeout,
 	}
 
+	requestStart := time.Now()
+	logger.Debug("Sending HTTP request", "method", request.Method, "url", request.URL, "headers", request.Headers)
+
 	response, err := client.Do(httpRequest)
 	if err != nil {
 		return fmt.Errorf("HTTP: %w", err)
@@ -174,6 +252,8 @@ func (r Req) Do(file, name string, options DoOptions) error {
 	}
 
 	defer response.Body.Close()
+
+	logger.Debug("Response", "status", response.Status, "duration", time.Since(requestStart))
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {

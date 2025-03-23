@@ -23,9 +23,9 @@ func TestCheck(t *testing.T) {
 		stdout := &bytes.Buffer{}
 		stderr := &bytes.Buffer{}
 
-		req := req.New(stdout, stderr)
+		app := req.New(stdout, stderr, false)
 
-		err := req.Check([]string{good})
+		err := app.Check([]string{good}, req.CheckOptions{})
 		test.Ok(t, err)
 
 		// Stderr should be empty
@@ -40,9 +40,9 @@ func TestCheck(t *testing.T) {
 		stdout := &bytes.Buffer{}
 		stderr := &bytes.Buffer{}
 
-		req := req.New(stdout, stderr)
+		app := req.New(stdout, stderr, false)
 
-		err := req.Check([]string{bad})
+		err := app.Check([]string{bad}, req.CheckOptions{})
 		test.Err(t, err)
 
 		got := stderr.String()
@@ -82,7 +82,7 @@ Accept: application/json
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	app := req.New(stdout, stderr)
+	app := req.New(stdout, stderr, false)
 
 	file, err := os.CreateTemp(t.TempDir(), "test*.http")
 	test.Ok(t, err)
