@@ -35,13 +35,15 @@ func Build() (*cli.Command, error) {
 
 // check returns the check subcommand.
 func check() (*cli.Command, error) {
+	var options req.CheckOptions
 	return cli.New(
 		"check",
 		cli.Short("Check .http files for syntax errors"),
 		cli.Allow(cli.MinArgs(1)),
+		cli.Flag(&options.Verbose, "verbose", 'v', false, "Enable debug logging"),
 		cli.Run(func(cmd *cli.Command, args []string) error {
-			req := req.New(cmd.Stdout(), cmd.Stderr())
-			return req.Check(args)
+			req := req.New(cmd.Stdout(), cmd.Stderr(), options.Verbose)
+			return req.Check(args, options)
 		}),
 	)
 }
@@ -55,8 +57,10 @@ func show() (*cli.Command, error) {
 		cli.RequiredArg("file", "Path of the .http file"),
 		cli.Flag(&options.Resolve, "resolve", 'r', false, "Resolve the file handling variable interpolation etc."),
 		cli.Flag(&options.JSON, "json", 'j', false, "Output the file as JSON"),
+		cli.Flag(&options.Verbose, "verbose", 'v', false, "Enable debug logging"),
 		cli.Run(func(cmd *cli.Command, args []string) error {
-			req := req.New(cmd.Stdout(), cmd.Stderr())
+			// TODO(@FollowTheProcess): Same here
+			req := req.New(cmd.Stdout(), cmd.Stderr(), options.Verbose)
 			return req.Show(cmd.Arg("file"), options)
 		}),
 	)
@@ -91,7 +95,7 @@ func do() (*cli.Command, error) {
 		cli.Flag(&options.Output, "output", 'o', "", "Name of a file to save the response"),
 		cli.Flag(&options.Verbose, "verbose", 'v', false, "Enable debug logging"),
 		cli.Run(func(cmd *cli.Command, args []string) error {
-			req := req.New(cmd.Stdout(), cmd.Stderr())
+			req := req.New(cmd.Stdout(), cmd.Stderr(), options.Verbose)
 			return req.Do(cmd.Arg("file"), cmd.Arg("name"), options)
 		}),
 	)
