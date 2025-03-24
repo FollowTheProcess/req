@@ -242,7 +242,15 @@ func (r Req) Do(file, name string, options DoOptions) error {
 	}
 
 	requestStart := time.Now()
-	logger.Debug("Sending HTTP request", "method", request.Method, "url", request.URL, "headers", request.Headers)
+	logger.Debug(
+		"Sending HTTP request",
+		"method",
+		request.Method,
+		"url",
+		request.URL,
+		"headers",
+		request.Headers,
+	)
 
 	response, err := client.Do(httpRequest)
 	if err != nil {

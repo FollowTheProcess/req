@@ -55,7 +55,13 @@ func show() (*cli.Command, error) {
 		"show",
 		cli.Short("Show the contents of a .http file"),
 		cli.RequiredArg("file", "Path of the .http file"),
-		cli.Flag(&options.Resolve, "resolve", 'r', false, "Resolve the file handling variable interpolation etc."),
+		cli.Flag(
+			&options.Resolve,
+			"resolve",
+			'r',
+			false,
+			"Resolve the file handling variable interpolation etc.",
+		),
 		cli.Flag(&options.JSON, "json", 'j', false, "Output the file as JSON"),
 		cli.Flag(&options.Verbose, "verbose", 'v', false, "Enable debug logging"),
 		cli.Run(func(cmd *cli.Command, args []string) error {
@@ -91,7 +97,13 @@ func do() (*cli.Command, error) {
 			0,
 			"Connection timeout for the request",
 		),
-		cli.Flag(&options.NoRedirect, "no-redirect", cli.NoShortHand, false, "Disable following redirects"),
+		cli.Flag(
+			&options.NoRedirect,
+			"no-redirect",
+			cli.NoShortHand,
+			false,
+			"Disable following redirects",
+		),
 		cli.Flag(&options.Output, "output", 'o', "", "Name of a file to save the response"),
 		cli.Flag(&options.Verbose, "verbose", 'v', false, "Enable debug logging"),
 		cli.Run(func(cmd *cli.Command, args []string) error {

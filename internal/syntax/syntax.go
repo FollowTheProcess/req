@@ -41,7 +41,8 @@ type Position struct {
 //   - At least Name, Line and StartCol must be set (and non zero)
 //   - EndCol cannot be 0, it's only allowed values are StartCol or any number greater than StartCol
 func (p Position) IsValid() bool {
-	if p.Name == "" || p.Line < 1 || p.StartCol < 1 || p.EndCol < 1 || (p.EndCol >= 1 && p.EndCol < p.StartCol) {
+	if p.Name == "" || p.Line < 1 || p.StartCol < 1 || p.EndCol < 1 ||
+		(p.EndCol >= 1 && p.EndCol < p.StartCol) {
 		return false
 	}
 	return true

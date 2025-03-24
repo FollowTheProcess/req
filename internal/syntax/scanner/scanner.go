@@ -354,7 +354,10 @@ func scanRequestSep(s *Scanner) scanFn {
 	s.emit(token.RequestSeparator)
 
 	if !unicode.IsSpace(s.char()) && !isAlpha(s.char()) && s.char() != eof {
-		s.errorf("bad request name character %q, request names may only begin with ASCII letters", s.char())
+		s.errorf(
+			"bad request name character %q, request names may only begin with ASCII letters",
+			s.char(),
+		)
 		s.next()
 		return scanStart
 	}
