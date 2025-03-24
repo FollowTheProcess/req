@@ -364,7 +364,10 @@ func (p *Parser) parseRequest() syntax.Request {
 	request = p.parseRequestVars(request)
 
 	if !token.IsMethod(p.current.Kind) {
-		p.errorf("request separators must be followed by either a name or a HTTP method, got %s", p.current.Kind)
+		p.errorf(
+			"request separators must be followed by either a name or a HTTP method, got %s",
+			p.current.Kind,
+		)
 		return syntax.Request{}
 	}
 

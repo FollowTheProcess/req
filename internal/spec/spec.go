@@ -350,11 +350,17 @@ func replaceAndValidate(replacer *strings.Replacer, in string) (out string, err 
 		// There are template tags remaining
 		if interpEnd == -1 {
 			// Unterminated
-			return "", fmt.Errorf("unterminated variable interpolation: %q", replaced[interpStart:end])
+			return "", fmt.Errorf(
+				"unterminated variable interpolation: %q",
+				replaced[interpStart:end],
+			)
 		}
 
 		// Undeclared variable
-		return "", fmt.Errorf("use of undeclared variable %q in interpolation", replaced[interpStart:interpEnd+2])
+		return "", fmt.Errorf(
+			"use of undeclared variable %q in interpolation",
+			replaced[interpStart:interpEnd+2],
+		)
 	}
 
 	return replaced, nil

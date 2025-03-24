@@ -12,7 +12,12 @@ import (
 func TestString(t *testing.T) {
 	// All we really care about is the format, let's let quick handle it!
 	f := func(tok token.Token) bool {
-		return tok.String() == fmt.Sprintf("<Token::%s start=%d, end=%d>", tok.Kind.String(), tok.Start, tok.End)
+		return tok.String() == fmt.Sprintf(
+			"<Token::%s start=%d, end=%d>",
+			tok.Kind.String(),
+			tok.Start,
+			tok.End,
+		)
 	}
 	if err := quick.Check(f, nil); err != nil {
 		t.Fatal(err)
@@ -81,7 +86,12 @@ func TestIsMethod(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.kind.String(), func(t *testing.T) {
-			test.Equal(t, token.IsMethod(tt.kind), tt.want, test.Context("IsMethod(%s) mismatch", tt.kind))
+			test.Equal(
+				t,
+				token.IsMethod(tt.kind),
+				tt.want,
+				test.Context("IsMethod(%s) mismatch", tt.kind),
+			)
 		})
 	}
 }
@@ -147,7 +157,12 @@ func TestIsKeyword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.kind.String(), func(t *testing.T) {
-			test.Equal(t, token.IsKeyword(tt.kind), tt.want, test.Context("IsKeyword(%s) mismatch", tt.kind))
+			test.Equal(
+				t,
+				token.IsKeyword(tt.kind),
+				tt.want,
+				test.Context("IsKeyword(%s) mismatch", tt.kind),
+			)
 		})
 	}
 }

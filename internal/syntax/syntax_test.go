@@ -259,7 +259,11 @@ func FuzzPosition(f *testing.F) {
 		}
 
 		// Property: If IsValid returned true, Line must be >= 1
-		test.True(t, pos.Line >= 1, test.Context("IsValid() = true but pos.Line (%d) was not >= 1", pos.Line))
+		test.True(
+			t,
+			pos.Line >= 1,
+			test.Context("IsValid() = true but pos.Line (%d) was not >= 1", pos.Line),
+		)
 
 		// Property: If IsValid returned true, StartCol must be >= 1
 		test.True(
@@ -269,13 +273,21 @@ func FuzzPosition(f *testing.F) {
 		)
 
 		// Property: If IsValid returned true, EndCol must be >= 1
-		test.True(t, pos.EndCol >= 1, test.Context("IsValid() = true but pos.EndCol (%d) was not >= 1", pos.EndCol))
+		test.True(
+			t,
+			pos.EndCol >= 1,
+			test.Context("IsValid() = true but pos.EndCol (%d) was not >= 1", pos.EndCol),
+		)
 
 		// Property: If IsValid returned true, EndCol must also be >= StartCol
 		test.True(
 			t,
 			pos.EndCol >= pos.StartCol,
-			test.Context("IsValid() = true but pos.EndCol (%d) was not >= pos.StartCol (%d)", pos.EndCol, pos.StartCol),
+			test.Context(
+				"IsValid() = true but pos.EndCol (%d) was not >= pos.StartCol (%d)",
+				pos.EndCol,
+				pos.StartCol,
+			),
 		)
 
 		// Property: If StartCol == EndCol, no range must appear in the string
