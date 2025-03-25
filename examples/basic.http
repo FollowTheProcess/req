@@ -1,0 +1,5 @@
+@base = https://jsonplaceholder.typicode.com
+
+### Demo
+GET {{base}}/todos/1
+Accept: application/json
