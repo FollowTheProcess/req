@@ -104,28 +104,26 @@ func (r Req) Check(files []string, options CheckOptions) error {
 
 	for _, file := range files {
 		logger.Debug("Checking", "file", file)
-		return func() error {
-			start := time.Now()
-			f, err := os.Open(file)
-			if err != nil {
-				return err
-			}
-			defer f.Close()
+		start := time.Now()
+		f, err := os.Open(file)
+		if err != nil {
+			return err
+		}
 
-			parser, err := parser.New(file, f, syntax.PrettyConsoleHandler(r.stderr))
-			if err != nil {
-				return err
-			}
+		parser, err := parser.New(file, f, syntax.PrettyConsoleHandler(r.stderr))
+		if err != nil {
+			return err
+		}
 
-			_, err = parser.Parse()
-			if err != nil {
-				return fmt.Errorf("%w: %s is not valid http syntax", err, file)
-			}
+		_, err = parser.Parse()
+		if err != nil {
+			return fmt.Errorf("%w: %s is not valid http syntax", err, file)
+		}
 
-			msg.Fsuccess(r.stdout, "%s is valid", file)
-			logger.Debug("Took", "duration", time.Since(start))
-			return nil
-		}()
+		f.Close()
+
+		msg.Fsuccess(r.stdout, "%s is valid", file)
+		logger.Debug("Took", "duration", time.Since(start))
 	}
 
 	logger.Debug("Took (overall)", "duration", time.Since(overallStart))
