@@ -8,17 +8,27 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/FollowTheProcess/hue"
 	"github.com/FollowTheProcess/msg"
 	"github.com/FollowTheProcess/req/internal/spec"
 	"github.com/FollowTheProcess/req/internal/syntax"
 	"github.com/FollowTheProcess/req/internal/syntax/parser"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+)
+
+// Styles.
+const (
+	headerName = hue.Cyan
+	success    = hue.Green
+	failure    = hue.Red
 )
 
 // TODO(@FollowTheProcess): A command that takes an OpenAPI schema and dumps it to .http file(s)
@@ -268,7 +278,16 @@ func (r Req) Do(file, name string, options DoOptions) error {
 		return err
 	}
 
-	fmt.Fprintln(r.stdout, response.Status)
+	if response.StatusCode >= http.StatusBadRequest {
+		fmt.Fprintln(r.stdout, failure.Text(response.Status))
+	} else {
+		fmt.Fprintln(r.stdout, success.Text(response.Status))
+	}
+
+	for _, key := range slices.Sorted(maps.Keys(response.Header)) {
+		fmt.Fprintf(r.stdout, "%s: %s\n", headerName.Text(key), response.Header.Get(key))
+	}
+
 	fmt.Fprintln(r.stdout, string(body))
 	return nil
 }

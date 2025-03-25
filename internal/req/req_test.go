@@ -83,6 +83,7 @@ func TestShow(t *testing.T) {
 
 func TestDo(t *testing.T) {
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Date", "fixed")
 		fmt.Fprintf(w, `{"stuff": "here"}`)
 	}
 
@@ -111,5 +112,12 @@ Accept: application/json
 	err = app.Do(file.Name(), "Test", options)
 	test.Ok(t, err)
 
-	test.Equal(t, stdout.String(), "200 OK\n{\"stuff\": \"here\"}\n")
+	want := `200 OK
+Content-Length: 17
+Content-Type: text/plain; charset=utf-8
+Date: fixed
+{"stuff": "here"}
+`
+
+	test.Diff(t, stdout.String(), want)
 }
