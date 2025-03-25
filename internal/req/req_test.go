@@ -66,6 +66,21 @@ func TestCheck(t *testing.T) {
 	})
 }
 
+func TestShow(t *testing.T) {
+	good := filepath.Join("testdata", "check", "good.http")
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	app := req.New(stdout, stderr, false)
+
+	err := app.Show(good, req.ShowOptions{})
+	test.Ok(t, err)
+
+	test.Equal(t, stderr.String(), "")
+	test.True(t, strings.Contains(stdout.String(), "### Body"))
+}
+
 func TestDo(t *testing.T) {
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"stuff": "here"}`)

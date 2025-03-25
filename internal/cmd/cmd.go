@@ -65,7 +65,6 @@ func show() (*cli.Command, error) {
 		cli.Flag(&options.JSON, "json", 'j', false, "Output the file as JSON"),
 		cli.Flag(&options.Verbose, "verbose", 'v', false, "Enable debug logging"),
 		cli.Run(func(cmd *cli.Command, args []string) error {
-			// TODO(@FollowTheProcess): Same here
 			req := req.New(cmd.Stdout(), cmd.Stderr(), options.Verbose)
 			return req.Show(cmd.Arg("file"), options)
 		}),
