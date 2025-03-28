@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"net"
 	"net/http"
 	"os"
 	"slices"
@@ -29,6 +30,14 @@ const (
 	headerName = hue.Cyan
 	success    = hue.Green
 	failure    = hue.Red
+)
+
+// HTTP config.
+const (
+	keepAliveTimeout      = 30 * time.Second
+	idleTimeout           = 90 * time.Second
+	expectContinueTimeout = 1 * time.Second
+	maxIdleConns          = 100
 )
 
 // TODO(@FollowTheProcess): A command that takes an OpenAPI schema and dumps it to .http file(s)
@@ -244,10 +253,7 @@ func (r Req) Do(file, name string, options DoOptions) error {
 		httpRequest.Header.Add(key, value)
 	}
 
-	// TODO(@FollowTheProcess): Make a proper http client elsewhere
-	client := http.Client{
-		Timeout: request.Timeout,
-	}
+	client := httpClient(request)
 
 	requestStart := time.Now()
 	logger.Debug(
@@ -290,4 +296,41 @@ func (r Req) Do(file, name string, options DoOptions) error {
 
 	fmt.Fprintln(r.stdout, string(body))
 	return nil
+}
+
+// construct a HTTP client customised for the request with timeouts, no redirect policies etc.
+func httpClient(request spec.Request) *http.Client {
+	var checkRedirect func(req *http.Request, via []*http.Request) error
+	if request.NoRedirect {
+		checkRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
+
+	dialContext := func(dialer *net.Dialer) func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return dialer.DialContext
+	}
+
+	// We want to always try HTTP2 unless opted out, this is the behaviour
+	// of the default std lib http client anyway
+	http2 := !strings.HasPrefix(request.HTTPVersion, "HTTP/1")
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: dialContext(&net.Dialer{
+				Timeout:   request.Timeout,
+				KeepAlive: keepAliveTimeout,
+			}),
+			ForceAttemptHTTP2:     http2,
+			MaxIdleConns:          maxIdleConns,
+			IdleConnTimeout:       idleTimeout,
+			TLSHandshakeTimeout:   request.ConnectionTimeout,
+			ExpectContinueTimeout: expectContinueTimeout,
+		},
+		CheckRedirect: checkRedirect,
+		Timeout:       request.Timeout,
+	}
+
+	return client
 }
