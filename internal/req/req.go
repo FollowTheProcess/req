@@ -311,6 +311,10 @@ func httpClient(request spec.Request) *http.Client {
 		return dialer.DialContext
 	}
 
+	// We want to always try HTTP2 unless opted out, this is the behaviour
+	// of the default std lib http client anyway
+	http2 := !strings.HasPrefix(request.HTTPVersion, "HTTP/1")
+
 	client := &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
@@ -318,7 +322,7 @@ func httpClient(request spec.Request) *http.Client {
 				Timeout:   request.Timeout,
 				KeepAlive: keepAliveTimeout,
 			}),
-			ForceAttemptHTTP2:     true,
+			ForceAttemptHTTP2:     http2,
 			MaxIdleConns:          maxIdleConns,
 			IdleConnTimeout:       idleTimeout,
 			TLSHandshakeTimeout:   request.ConnectionTimeout,
