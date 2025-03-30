@@ -34,10 +34,12 @@ const (
 
 // HTTP config.
 const (
-	keepAliveTimeout      = 30 * time.Second
-	idleTimeout           = 90 * time.Second
-	expectContinueTimeout = 1 * time.Second
-	maxIdleConns          = 100
+	DefaultTimeout           = 30 * time.Second
+	DefaultConnectionTimeout = 10 * time.Second
+	keepAliveTimeout         = 30 * time.Second
+	idleTimeout              = 90 * time.Second
+	expectContinueTimeout    = 1 * time.Second
+	maxIdleConns             = 100
 )
 
 // TODO(@FollowTheProcess): A command that takes an OpenAPI schema and dumps it to .http file(s)
@@ -207,6 +209,9 @@ type DoOptions struct {
 
 // Do implements the `req do` subcommand.
 func (r Req) Do(file, name string, options DoOptions) error {
+	ctx, cancel := context.WithTimeout(context.Background(), options.Timeout)
+	defer cancel()
+
 	logger := r.logger.WithPrefix("do").With("file", file, "request", name)
 	parseStart := time.Now()
 
@@ -238,9 +243,8 @@ func (r Req) Do(file, name string, options DoOptions) error {
 
 	logger.Debug("Parsed file", "duration", time.Since(parseStart))
 
-	// TODO(@FollowTheProcess): A context with a timeout and listens to ctrl+c
 	httpRequest, err := http.NewRequestWithContext(
-		context.TODO(),
+		ctx,
 		request.Method,
 		request.URL,
 		bytes.NewReader(request.Body),

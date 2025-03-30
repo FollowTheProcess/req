@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/FollowTheProcess/req/internal/req"
 	"github.com/FollowTheProcess/test"
@@ -107,7 +108,10 @@ Accept: application/json
 	test.Ok(t, err)
 	test.Ok(t, file.Close())
 
-	options := req.DoOptions{}
+	options := req.DoOptions{
+		Timeout:           1 * time.Second,
+		ConnectionTimeout: 500 * time.Millisecond,
+	}
 
 	err = app.Do(file.Name(), "Test", options)
 	test.Ok(t, err)
