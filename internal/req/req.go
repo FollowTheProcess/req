@@ -17,19 +17,18 @@ import (
 	"time"
 
 	"github.com/FollowTheProcess/hue"
+	"github.com/FollowTheProcess/log"
 	"github.com/FollowTheProcess/msg"
 	"github.com/FollowTheProcess/req/internal/spec"
 	"github.com/FollowTheProcess/req/internal/syntax"
 	"github.com/FollowTheProcess/req/internal/syntax/parser"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 )
 
 // Styles.
 const (
 	headerName = hue.Cyan
-	success    = hue.Green
-	failure    = hue.Red
+	success    = hue.Green | hue.Bold
+	failure    = hue.Red | hue.Bold
 )
 
 // HTTP config.
@@ -53,59 +52,12 @@ type Req struct {
 
 // New returns a new instance of [Req].
 func New(stdout, stderr io.Writer, debug bool) Req {
-	const width = 5
-
-	level := log.InfoLevel
+	level := log.LevelInfo
 	if debug {
-		level = log.DebugLevel
+		level = log.LevelDebug
 	}
 
-	logger := log.NewWithOptions(stderr, log.Options{
-		ReportTimestamp: true,
-		Level:           level,
-	})
-
-	// Largely the default styles but with a default MaxWidth of 5 so as to not cutoff
-	// DEBUG or ERROR
-	logger.SetStyles(&log.Styles{
-		Timestamp: lipgloss.NewStyle(),
-		Caller:    lipgloss.NewStyle().Faint(true),
-		Prefix:    lipgloss.NewStyle().Bold(true).Faint(true),
-		Message:   lipgloss.NewStyle(),
-		Key:       lipgloss.NewStyle().Faint(true),
-		Value:     lipgloss.NewStyle(),
-		Separator: lipgloss.NewStyle().Faint(true),
-		Levels: map[log.Level]lipgloss.Style{
-			log.DebugLevel: lipgloss.NewStyle().
-				SetString(strings.ToUpper(log.DebugLevel.String())).
-				Bold(true).
-				MaxWidth(width).
-				Foreground(lipgloss.Color("63")),
-			log.InfoLevel: lipgloss.NewStyle().
-				SetString(strings.ToUpper(log.InfoLevel.String())).
-				Bold(true).
-				MaxWidth(width).
-				Foreground(lipgloss.Color("86")),
-			log.WarnLevel: lipgloss.NewStyle().
-				SetString(strings.ToUpper(log.WarnLevel.String())).
-				Bold(true).
-				MaxWidth(width).
-				Foreground(lipgloss.Color("192")),
-			log.ErrorLevel: lipgloss.NewStyle().
-				SetString(strings.ToUpper(log.ErrorLevel.String())).
-				Bold(true).
-				MaxWidth(width).
-				Foreground(lipgloss.Color("204")),
-			log.FatalLevel: lipgloss.NewStyle().
-				SetString(strings.ToUpper(log.FatalLevel.String())).
-				Bold(true).
-				MaxWidth(width).
-				Foreground(lipgloss.Color("134")),
-		},
-		Keys:   map[string]lipgloss.Style{},
-		Values: map[string]lipgloss.Style{},
-	})
-
+	logger := log.New(stderr, log.WithLevel(level))
 	return Req{
 		stdout: stdout,
 		stderr: stderr,
@@ -120,7 +72,7 @@ type CheckOptions struct {
 
 // Check implements the `req check` subcommand.
 func (r Req) Check(files []string, options CheckOptions) error {
-	logger := r.logger.WithPrefix("check")
+	logger := r.logger.Prefixed("check")
 	overallStart := time.Now()
 
 	for _, file := range files {
@@ -212,7 +164,7 @@ func (r Req) Do(file, name string, options DoOptions) error {
 	ctx, cancel := context.WithTimeout(context.Background(), options.Timeout)
 	defer cancel()
 
-	logger := r.logger.WithPrefix("do").With("file", file, "request", name)
+	logger := r.logger.Prefixed("do").With("file", file, "request", name)
 	parseStart := time.Now()
 
 	f, err := os.Open(file)
