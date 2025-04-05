@@ -33,21 +33,26 @@ const (
 
 // HTTP config.
 const (
-	DefaultTimeout           = 30 * time.Second
+	// DefaultTimeout is the default amount of time allowed for the entire request cycle.
+	DefaultTimeout = 30 * time.Second
+
+	// DefaultConnectionTimeout is the default amount of time allowed for the HTTP connection/TLS handshake.
 	DefaultConnectionTimeout = 10 * time.Second
-	keepAliveTimeout         = 30 * time.Second
-	idleTimeout              = 90 * time.Second
-	expectContinueTimeout    = 1 * time.Second
-	maxIdleConns             = 100
+
+	keepAliveTimeout      = 30 * time.Second
+	idleTimeout           = 90 * time.Second
+	expectContinueTimeout = 1 * time.Second
+	maxIdleConns          = 100
 )
 
 // TODO(@FollowTheProcess): A command that takes an OpenAPI schema and dumps it to .http file(s)
+// TODO(@FollowTheProcess): Can we syntax highlight the JSON body? I guess look at Content-Type and decide from that
 
 // Req holds the state of the program.
 type Req struct {
-	stdout io.Writer
-	stderr io.Writer
-	logger *log.Logger
+	stdout io.Writer   // Normal program output is written here
+	stderr io.Writer   // Errors, logs and debug info written here
+	logger *log.Logger // The logger, passed around the whole program
 }
 
 // New returns a new instance of [Req].
@@ -249,6 +254,8 @@ func (r Req) Do(file, name string, options DoOptions) error {
 	for _, key := range slices.Sorted(maps.Keys(response.Header)) {
 		fmt.Fprintf(r.stdout, "%s: %s\n", headerName.Text(key), response.Header.Get(key))
 	}
+
+	fmt.Fprintln(r.stdout) // Line space
 
 	fmt.Fprintln(r.stdout, string(body))
 	return nil
