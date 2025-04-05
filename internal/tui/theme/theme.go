@@ -4,6 +4,10 @@ package theme
 
 import "github.com/charmbracelet/lipgloss"
 
+// TODO(@FollowTheProcess): Work out a common set of styles for the filepicker, help, list and (potentially) viewport and turn
+// that into a Theme struct, then we can map colours/styles onto this Theme and be able to potentially support different
+// themes via a command line flag etc.
+
 // CatpuccinPalette is the colour palette for a Catpuccin theme.
 // See https://catppuccin.com/palette/.
 type CatpuccinPalette struct {
