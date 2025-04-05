@@ -2,10 +2,9 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/FollowTheProcess/cli"
 	"github.com/FollowTheProcess/req/internal/req"
+	"github.com/FollowTheProcess/req/internal/tui"
 )
 
 var (
@@ -24,10 +23,7 @@ func Build() (*cli.Command, error) {
 		cli.Commit(commit),
 		cli.BuildDate(date),
 		cli.Run(func(cmd *cli.Command, args []string) error {
-			// Long term I'd like bare usage to find all the .http or .rest files recursively under cwd
-			// then launch some sort of interactive picker TUI thing, maybe some charm stuff
-			fmt.Println("Fun things coming soon...")
-			return nil
+			return tui.Run()
 		}),
 		cli.SubCommands(check, show, do),
 	)
