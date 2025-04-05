@@ -31,7 +31,7 @@ func Run() error {
 	m := model{
 		filepicker: picker,
 		help:       help.New(),
-		keys:       keyMap{keys: picker.KeyMap},
+		keys:       keyMap(picker.KeyMap),
 	}
 
 	tm, err := tea.NewProgram(&m).Run()
@@ -47,23 +47,21 @@ func Run() error {
 	return nil
 }
 
-type keyMap struct {
-	keys filepicker.KeyMap
-}
+type keyMap filepicker.KeyMap
 
 func (k keyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
-		k.keys.Up,
-		k.keys.Down,
-		k.keys.Back,
-		k.keys.Select,
+		k.Up,
+		k.Down,
+		k.Back,
+		k.Select,
 	}
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.keys.Up, k.keys.Down, k.keys.Back, k.keys.Select},
-		{k.keys.GoToTop, k.keys.GoToLast, k.keys.PageUp, k.keys.PageDown, k.keys.Open},
+		{k.Up, k.Down, k.Back, k.Select},
+		{k.GoToTop, k.GoToLast, k.PageUp, k.PageDown, k.Open},
 	}
 }
 
