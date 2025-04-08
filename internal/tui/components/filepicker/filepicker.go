@@ -6,12 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/FollowTheProcess/req/internal/tui/theme"
 	"github.com/charmbracelet/bubbles/filepicker"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const (
@@ -47,40 +45,7 @@ func New() Model {
 		Select:   key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
 	}
 
-	styles := filepicker.Styles{
-		DisabledCursor:   lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Text).Faint(true),
-		Cursor:           lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Rosewater),
-		Symlink:          lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Sapphire),
-		Directory:        lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Mauve).Bold(true),
-		File:             lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Text),
-		DisabledFile:     lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Text).Faint(true),
-		Permission:       lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Subtext0),
-		Selected:         lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Sky).Bold(true),
-		DisabledSelected: lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Red).Bold(true),
-		FileSize: lipgloss.NewStyle().
-			Foreground(theme.CatpuccinMacchiato.Text).
-			Width(fileSizeWidth).
-			Align(lipgloss.Right).
-			Faint(true),
-		EmptyDirectory: lipgloss.NewStyle().
-			Foreground(theme.CatpuccinMacchiato.Text).
-			Faint(true).
-			PaddingLeft(paddingLeft).
-			SetString("No files found!"),
-	}
-
-	picker.Styles = styles
-
 	helpModel := help.New()
-	helpModel.Styles = help.Styles{
-		Ellipsis:       lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Text),
-		ShortKey:       lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Subtext0),
-		ShortDesc:      lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Text),
-		ShortSeparator: lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Blue),
-		FullKey:        lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Subtext0),
-		FullDesc:       lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Text),
-		FullSeparator:  lipgloss.NewStyle().Foreground(theme.CatpuccinMacchiato.Blue),
-	}
 
 	return Model{
 		fp:   picker,

@@ -12,13 +12,13 @@ require (
 	github.com/FollowTheProcess/txtar v0.7.0
 	github.com/charmbracelet/bubbles v0.20.0
 	github.com/charmbracelet/bubbletea v1.3.4
-	github.com/charmbracelet/lipgloss v1.0.0
 	go.uber.org/goleak v1.3.0
 )
 
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
+	github.com/charmbracelet/lipgloss v1.0.0 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
