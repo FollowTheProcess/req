@@ -1,0 +1,3 @@
+ignore:
+  - examples
+  - internal/tui # For now, I have no idea how to test these
