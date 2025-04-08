@@ -156,6 +156,23 @@ func (r Request) String() string {
 	return builder.String()
 }
 
+// FilterValue helps implement tea.list.Item.
+//
+// See https://github.com/charmbracelet/bubbles/tree/master/list#adding-custom-items.
+func (r Request) FilterValue() string {
+	return r.Name
+}
+
+// Title returns the request's name.
+func (r Request) Title() string {
+	return r.Name
+}
+
+// Description returns a description of the request, in this case the method and URL.
+func (r Request) Description() string {
+	return fmt.Sprintf("%s %s", r.Method, r.URL)
+}
+
 // ResolveFile converts a [syntax.File] to a [File], performing variable
 // resolution and other validation.
 func ResolveFile(in syntax.File) (File, error) {

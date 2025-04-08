@@ -3,8 +3,14 @@ package tui
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/FollowTheProcess/req/internal/req"
+	"github.com/FollowTheProcess/req/internal/spec"
+	"github.com/FollowTheProcess/req/internal/syntax"
+	"github.com/FollowTheProcess/req/internal/syntax/parser"
 	"github.com/FollowTheProcess/req/internal/tui/components/filepicker"
+	"github.com/FollowTheProcess/req/internal/tui/components/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -28,6 +34,51 @@ func Run() error {
 	if !ok {
 		return fmt.Errorf("tui error, final model was not as expected: %T", tm)
 	}
-	fmt.Printf("You selected %s\n", final.Selected())
-	return nil
+
+	file := final.Selected()
+
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	parser, err := parser.New(file, f, syntax.PrettyConsoleHandler(os.Stderr))
+	if err != nil {
+		return err
+	}
+
+	raw, err := parser.Parse()
+	if err != nil {
+		return fmt.Errorf("%w: %s is not valid http syntax", err, file)
+	}
+
+	resolved, err := spec.ResolveFile(raw)
+	if err != nil {
+		return err
+	}
+
+	listModel := list.New("HTTP Requests in "+file, resolved.Requests)
+
+	tm, err = tea.NewProgram(&listModel, tea.WithAltScreen()).Run()
+	if err != nil {
+		return err
+	}
+
+	finalListModel, ok := tm.(list.Model)
+	if !ok {
+		return fmt.Errorf("tui error, list final model was not as expected: %T", tm)
+	}
+
+	request := finalListModel.Selected()
+
+	// TODO(@FollowTheProcess): This parses the file again
+
+	app := req.New(os.Stdout, os.Stderr, false)
+	options := req.DoOptions{
+		Timeout:           req.DefaultTimeout,
+		ConnectionTimeout: req.DefaultConnectionTimeout,
+	}
+
+	return app.Do(file, request, options)
 }
