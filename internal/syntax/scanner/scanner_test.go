@@ -646,16 +646,6 @@ type errorCollector struct {
 	mu   sync.Mutex
 }
 
-func (e *errorCollector) handler() syntax.ErrorHandler {
-	return func(pos syntax.Position, msg string) {
-		// Because the scanner runs in it's own goroutine and also makes use of the
-		// handler
-		e.mu.Lock()
-		defer e.mu.Unlock()
-		e.errs = append(e.errs, fmt.Sprintf("%s: %s\n", pos, msg))
-	}
-}
-
 func (e *errorCollector) String() string {
 	var s strings.Builder
 	slices.Sort(e.errs) // Deterministic
@@ -664,4 +654,14 @@ func (e *errorCollector) String() string {
 	}
 
 	return s.String()
+}
+
+func (e *errorCollector) handler() syntax.ErrorHandler {
+	return func(pos syntax.Position, msg string) {
+		// Because the scanner runs in it's own goroutine and also makes use of the
+		// handler
+		e.mu.Lock()
+		defer e.mu.Unlock()
+		e.errs = append(e.errs, fmt.Sprintf("%s: %s\n", pos, msg))
+	}
 }
