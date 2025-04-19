@@ -108,7 +108,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
-		m.fp.Height = msg.Height
+		m.fp.SetHeight(msg.Height)
 		m.help.Width = msg.Width
 
 	case clearErrorMsg:
