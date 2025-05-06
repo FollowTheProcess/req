@@ -11,7 +11,7 @@ require (
 	github.com/FollowTheProcess/test v0.21.0
 	github.com/FollowTheProcess/txtar v0.7.0
 	github.com/charmbracelet/bubbles v0.21.0
-	github.com/charmbracelet/bubbletea v1.3.4
+	github.com/charmbracelet/bubbletea v1.3.5
 	go.uber.org/goleak v1.3.0
 )
 
