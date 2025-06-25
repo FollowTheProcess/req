@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/FollowTheProcess/req/internal/req"
-	"github.com/FollowTheProcess/req/internal/spec"
-	"github.com/FollowTheProcess/req/internal/syntax"
-	"github.com/FollowTheProcess/req/internal/syntax/parser"
-	"github.com/FollowTheProcess/req/internal/tui/components/filepicker"
-	"github.com/FollowTheProcess/req/internal/tui/components/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"go.followtheprocess.codes/req/internal/req"
+	"go.followtheprocess.codes/req/internal/spec"
+	"go.followtheprocess.codes/req/internal/syntax"
+	"go.followtheprocess.codes/req/internal/syntax/parser"
+	"go.followtheprocess.codes/req/internal/tui/components/filepicker"
+	"go.followtheprocess.codes/req/internal/tui/components/list"
 )
 
 // TODO(@FollowTheProcess): I want to understand all this a bit more, atm it's basically copy pasted from the bubbles filepicker example

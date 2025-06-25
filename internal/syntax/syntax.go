@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/FollowTheProcess/hue"
+	"go.followtheprocess.codes/hue"
 )
 
 // An ErrorHandler may be provided to parts of the parsing pipeline. If a syntax error is encountered and

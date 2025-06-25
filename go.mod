@@ -1,26 +1,26 @@
-module github.com/FollowTheProcess/req
+module go.followtheprocess.codes/req
 
 go 1.24
 
 require (
-	github.com/FollowTheProcess/cli v0.13.0
-	github.com/FollowTheProcess/hue v0.5.2
-	github.com/FollowTheProcess/log v0.2.0
-	github.com/FollowTheProcess/msg v1.8.0
-	github.com/FollowTheProcess/snapshot v0.5.0
-	github.com/FollowTheProcess/test v0.21.0
-	github.com/FollowTheProcess/txtar v0.7.0
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.5
+	go.followtheprocess.codes/cli v0.14.0
+	go.followtheprocess.codes/hue v0.6.0
+	go.followtheprocess.codes/log v0.3.0
+	go.followtheprocess.codes/msg v1.9.1
+	go.followtheprocess.codes/snapshot v0.6.0
+	go.followtheprocess.codes/test v0.22.0
+	go.followtheprocess.codes/txtar v0.8.0
 	go.uber.org/goleak v1.3.0
 )
 
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/charmbracelet/colorprofile v0.3.0 // indirect
+	github.com/charmbracelet/colorprofile v0.3.1 // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
-	github.com/charmbracelet/x/ansi v0.8.0 // indirect
+	github.com/charmbracelet/x/ansi v0.9.3 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -36,8 +36,8 @@ require (
 	github.com/sahilm/fuzzy v0.1.1 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/sync v0.13.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/term v0.31.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/sync v0.15.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/term v0.32.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
 )

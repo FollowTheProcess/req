@@ -7,8 +7,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/FollowTheProcess/req/internal/syntax"
-	"github.com/FollowTheProcess/req/internal/syntax/token"
+	"go.followtheprocess.codes/req/internal/syntax"
+	"go.followtheprocess.codes/req/internal/syntax/token"
 )
 
 const (

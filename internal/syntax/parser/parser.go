@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/FollowTheProcess/req/internal/syntax"
-	"github.com/FollowTheProcess/req/internal/syntax/scanner"
-	"github.com/FollowTheProcess/req/internal/syntax/token"
+	"go.followtheprocess.codes/req/internal/syntax"
+	"go.followtheprocess.codes/req/internal/syntax/scanner"
+	"go.followtheprocess.codes/req/internal/syntax/token"
 )
 
 // TODO(@FollowTheProcess): Also handle dynamic variables that occur in {{}} blocks

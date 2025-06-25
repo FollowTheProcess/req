@@ -62,7 +62,7 @@ See the [Spec] and [Syntax Guide] for more info.
 Compiled binaries for all supported platforms can be found in the [GitHub release]. There is also a [homebrew] tap:
 
 ```shell
-brew install FollowTheProcess/tap/req
+brew install --cask FollowTheProcess/tap/req
 ```
 
 ## Quickstart

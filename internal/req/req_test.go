@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/FollowTheProcess/req/internal/req"
-	"github.com/FollowTheProcess/test"
+	"go.followtheprocess.codes/req/internal/req"
+	"go.followtheprocess.codes/test"
 )
 
 func TestCheck(t *testing.T) {

@@ -9,11 +9,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/FollowTheProcess/req/internal/syntax"
-	"github.com/FollowTheProcess/req/internal/syntax/scanner"
-	"github.com/FollowTheProcess/req/internal/syntax/token"
-	"github.com/FollowTheProcess/test"
-	"github.com/FollowTheProcess/txtar"
+	"go.followtheprocess.codes/req/internal/syntax"
+	"go.followtheprocess.codes/req/internal/syntax/scanner"
+	"go.followtheprocess.codes/req/internal/syntax/token"
+	"go.followtheprocess.codes/test"
+	"go.followtheprocess.codes/txtar"
 	"go.uber.org/goleak"
 )
 
