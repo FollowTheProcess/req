@@ -3,7 +3,7 @@ module github.com/FollowTheProcess/req
 go 1.24
 
 require (
-	github.com/FollowTheProcess/cli v0.13.0
+	github.com/FollowTheProcess/cli v0.14.0
 	github.com/FollowTheProcess/hue v0.5.2
 	github.com/FollowTheProcess/log v0.2.0
 	github.com/FollowTheProcess/msg v1.8.0
