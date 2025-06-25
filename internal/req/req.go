@@ -16,12 +16,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/FollowTheProcess/req/internal/spec"
-	"github.com/FollowTheProcess/req/internal/syntax"
-	"github.com/FollowTheProcess/req/internal/syntax/parser"
 	"go.followtheprocess.codes/hue"
 	"go.followtheprocess.codes/log"
 	"go.followtheprocess.codes/msg"
+	"go.followtheprocess.codes/req/internal/spec"
+	"go.followtheprocess.codes/req/internal/syntax"
+	"go.followtheprocess.codes/req/internal/syntax/parser"
 )
 
 // Styles.

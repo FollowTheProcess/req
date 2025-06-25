@@ -5,7 +5,7 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/FollowTheProcess/req/internal/syntax/token"
+	"go.followtheprocess.codes/req/internal/syntax/token"
 	"go.followtheprocess.codes/test"
 )
 

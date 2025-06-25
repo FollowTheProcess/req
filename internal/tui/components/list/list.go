@@ -2,9 +2,9 @@
 package list
 
 import (
-	"github.com/FollowTheProcess/req/internal/spec"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"go.followtheprocess.codes/req/internal/spec"
 )
 
 // Model is the list tea Model.

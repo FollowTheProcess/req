@@ -2,9 +2,9 @@
 package cmd
 
 import (
-	"github.com/FollowTheProcess/req/internal/req"
-	"github.com/FollowTheProcess/req/internal/tui"
 	"go.followtheprocess.codes/cli"
+	"go.followtheprocess.codes/req/internal/req"
+	"go.followtheprocess.codes/req/internal/tui"
 )
 
 var (

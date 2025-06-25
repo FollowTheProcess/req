@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/FollowTheProcess/req/internal/syntax"
+	"go.followtheprocess.codes/req/internal/syntax"
 	"go.followtheprocess.codes/snapshot"
 	"go.followtheprocess.codes/test"
 )

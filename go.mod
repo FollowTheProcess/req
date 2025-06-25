@@ -1,4 +1,4 @@
-module github.com/FollowTheProcess/req
+module go.followtheprocess.codes/req
 
 go 1.24
 

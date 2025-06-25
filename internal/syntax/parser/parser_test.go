@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/FollowTheProcess/req/internal/syntax"
-	"github.com/FollowTheProcess/req/internal/syntax/parser"
+	"go.followtheprocess.codes/req/internal/syntax"
+	"go.followtheprocess.codes/req/internal/syntax/parser"
 	"go.followtheprocess.codes/test"
 	"go.followtheprocess.codes/txtar"
 	"go.uber.org/goleak"
