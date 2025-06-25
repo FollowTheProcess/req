@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/FollowTheProcess/req/internal/syntax"
-	"github.com/FollowTheProcess/snapshot"
-	"github.com/FollowTheProcess/test"
+	"go.followtheprocess.codes/snapshot"
+	"go.followtheprocess.codes/test"
 )
 
 var (

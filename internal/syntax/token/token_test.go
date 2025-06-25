@@ -6,7 +6,7 @@ import (
 	"testing/quick"
 
 	"github.com/FollowTheProcess/req/internal/syntax/token"
-	"github.com/FollowTheProcess/test"
+	"go.followtheprocess.codes/test"
 )
 
 func TestString(t *testing.T) {
