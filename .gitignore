@@ -18,6 +18,7 @@
 !go.mod
 !.goreleaser.yaml
 !.golangci.yml
+!staticcheck.conf
 !**/testdata/**
 
 # CodeCov
