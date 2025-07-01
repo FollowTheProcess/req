@@ -1,9 +1,29 @@
-// Package scanner implements the lexical scanner for .http files.
+// Package scanner implement a lexical scanner for .http files, reading the raw source text
+// and emitting a stream of tokens.
+//
+// Unlike parsing a general purpose programming language, the .http file syntax is very context
+// dependent and there's not a lot of symbols or structure to distinguish these contexts from
+// one another e.g. a programming language may have braces, brackets etc. where as in .http files
+// it's a bit more implicit.
+//
+// For instance a HTTP header just looks like regular text, there are no quotes to distinguish
+// it as a string.
+//
+// Because of this, the scanner implemented here is context dependent and will only allow certain
+// tokens in certain contexts. This adds a bit of complexity but reduces it in the parser, as with
+// everything, this is a trade off.
+//
+// In the [spec] it treats certain whitespace as significant e.g. a GET <url> must be followed by a single
+// newline '\n' or '\r\n'. In this implementation whitespace is entirely ignored. This produces a more
+// robust implementation as it can handle discrepancies in formatting.
+//
+// [spec]: https://github.com/JetBrains/http-request-in-editor-spec
 package scanner
 
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"unicode"
 	"unicode/utf8"
 
@@ -12,42 +32,41 @@ import (
 )
 
 const (
-	bufferSize = 32       // Benchmarking suggests this as the best token buffer size
-	eof        = rune(-1) // eof signifies we have reached the end of the input
+	eof        = rune(-1) // eof signifies we have reached the end of the input.
+	bufferSize = 32       // benchmarks suggest this is the optimum token channel buffer size
 )
 
-// scanFn represents the state of the scanner as a function that returns the next state.
+// scanFn represents the state of the scanner as a function that does the work
+// associated with the current state, then returns the next state.
 type scanFn func(*Scanner) scanFn
 
 // Scanner is the http file scanner.
 type Scanner struct {
-	handler   syntax.ErrorHandler // The error handler, if any
-	tokens    chan token.Token    // Channel on which to emit scanned tokens
-	name      string              // Name of the file
-	src       []byte              // Raw source text
-	start     int                 // The start position of the current token
-	pos       int                 // Current scanner position in src (bytes, 0 indexed)
-	line      int                 // Current line number (1 indexed)
-	lineStart int                 // Offset at which the current line started
-	width     int                 // Width of the last rune read from input, so we can backup
+	handler           syntax.ErrorHandler // The installed error handler, to be called in response to scanning errors
+	tokens            chan token.Token    // Channel on which to emit scanned tokens
+	name              string              // Name of the file
+	src               []byte              // Raw source text
+	start             int                 // The start position of the current token
+	pos               int                 // Current scanner position in src (bytes, 0 indexed)
+	line              int                 // Current line number, 1 indexed
+	currentLineOffset int                 // Offset at which the current line started
+	width             int                 // Width of the last rune read from input, allows a single character backup
 }
 
-// New returns a new [Scanner] that reads from r.
+// New returns a new [Scanner] and kicks off the state machine in a goroutine.
 func New(name string, src []byte, handler syntax.ErrorHandler) *Scanner {
 	s := &Scanner{
 		handler: handler,
 		tokens:  make(chan token.Token, bufferSize),
 		name:    name,
 		src:     src,
-		start:   0,
-		pos:     0,
 		line:    1,
-		width:   0,
 	}
 
-	// run terminates when the scanning state machine is finished and all the tokens
-	// drained from s.tokens so no wg.Add needed here
+	// run terminates when the scanning state machine is finished and all the
+	// tokens are drained from s.tokens, so no other synchronisation needed here
 	go s.run()
+
 	return s
 }
 
@@ -56,76 +75,77 @@ func (s *Scanner) Scan() token.Token {
 	return <-s.tokens
 }
 
-// next returns, and consumes, the next character in the input or [eof].
+// next returns the next utf8 rune in the input, or [eof], and advances the scanner
+// over that rune such that successive calls to [Scanner.next] iterate through
+// src one rune at a time.
 func (s *Scanner) next() rune {
 	if s.pos >= len(s.src) {
 		return eof
 	}
 
 	char, width := utf8.DecodeRune(s.src[s.pos:])
-	if char == utf8.RuneError {
-		s.errorf("invalid utf8 char: %U", char)
-		// Advance to the end to prevent cascade errors
-		s.pos = len(s.src)
-		return eof
-	}
-
 	s.width = width
 	s.pos += width
+
 	if char == '\n' {
 		s.line++
-		s.lineStart = s.pos
+		s.currentLineOffset = s.pos
 	}
 
 	return char
 }
 
-// peek returns, but does not consume, the next character in the input or [eof].
+// peek returns the next utf8 rune in the input, or [eof], but does not
+// advance the scanner.
+//
+// Successive calls to peek simply return the same rune again and again.
 func (s *Scanner) peek() rune {
 	if s.pos >= len(s.src) {
 		return eof
 	}
 
-	_, width := utf8.DecodeRune(s.src[s.pos:])
-
-	peekPos := s.pos + width
-	if peekPos >= len(s.src) {
-		return eof
-	}
-
-	peekChar, _ := utf8.DecodeRune(s.src[peekPos:])
-
-	return peekChar
-}
-
-// char returns the character the scanner is currently sat on or [eof].
-func (s *Scanner) char() rune {
-	if s.pos >= len(s.src) {
-		return eof
-	}
 	char, _ := utf8.DecodeRune(s.src[s.pos:])
+
 	return char
 }
 
-// rest returns the rest of src, starting from the current position.
-func (s *Scanner) rest() []byte {
-	if s.pos >= len(s.src) {
-		return nil
-	}
-	return s.src[s.pos:]
-}
-
 // skip ignores any characters for which the predicate returns true, stopping at the
-// first one that returns false such that after it returns, s.advance returns the
+// first one that returns false such that after it returns, [Scanner.next] returns the
 // first 'false' char.
 //
 // The scanner start position is brought up to the current position before returning, effectively
 // ignoring everything it's travelled over in the meantime.
 func (s *Scanner) skip(predicate func(r rune) bool) {
-	for predicate(s.char()) {
+	for predicate(s.peek()) {
 		s.next()
 	}
+
 	s.start = s.pos
+}
+
+// takeWhile consumes characters so long as the predicate returns true, stopping at the
+// first one that returns false such that after it returns, [Scanner.next] returns the first 'false' rune.
+func (s *Scanner) takeWhile(predicate func(r rune) bool) {
+	for predicate(s.peek()) {
+		s.next()
+	}
+}
+
+// takeUntil consumes characters until it hits any of the specified runes.
+//
+// It stops before it consumes the first specified rune such that after it returns,
+// the next call to [Scanner.next] returns the offending rune.
+//
+//	s.takeUntil('\n', '\t') // Consume runes until you hit a newline or a tab
+func (s *Scanner) takeUntil(runes ...rune) {
+	for {
+		next := s.peek()
+		if slices.Contains(runes, next) {
+			return
+		}
+		// Otherwise, advance the scanner
+		s.next()
+	}
 }
 
 // emit passes a token over the tokens channel, using the scanner's internal
@@ -136,32 +156,37 @@ func (s *Scanner) emit(kind token.Kind) {
 		Start: s.start,
 		End:   s.pos,
 	}
+
 	s.start = s.pos
 }
 
 // run starts the state machine for the scanner, it runs with each [scanFn] returning the next
-// state until one returns nil (typically an error or eof), at which point the tokens channel
+// state until one returns nil (typically in response to an error or eof), at which point the tokens channel
 // is closed as a signal to the receiver that no more tokens will be sent.
 func (s *Scanner) run() {
 	for state := scanStart; state != nil; {
 		state = state(s)
 	}
-	s.tokens <- token.Token{Kind: token.EOF, Start: s.pos, End: s.pos}
+
 	close(s.tokens)
 }
 
-// error calculates the position information and arranges for s.handler to be called
-// with the information.
+// error calculates the position information and calls the installed error handler
+// with the information, emitting an error token in the process.
 func (s *Scanner) error(msg string) {
+	// So that even if there is no handler installed, we still know something
+	// went wrong
+	s.emit(token.Error)
+
 	if s.handler == nil {
-		// I guess just ignore the error?
+		// Nothing more to do
 		return
 	}
 
 	// Column is the number of bytes between the last newline and the current position
 	// +1 because columns are 1 indexed
-	startCol := 1 + s.start - s.lineStart
-	endCol := 1 + s.pos - s.lineStart
+	startCol := 1 + s.start - s.currentLineOffset
+	endCol := 1 + s.pos - s.currentLineOffset
 
 	position := syntax.Position{
 		Name:     s.name,
@@ -180,397 +205,420 @@ func (s *Scanner) errorf(format string, a ...any) {
 }
 
 // scanStart is the initial state of the scanner.
+//
+// At the start (or top) state, the only things that can be encountered in a valid .http
+// file are:
+//
+//   - '#' for comments and request separators
+//   - '/' for comments
+//   - '@' for global variables
+//
+// Everything else must only appear in certain contexts e.g. HTTP methods may *only* appear
+// immediately after a separator. HTTP versions may *only* appear after a URL etc.
+//
+// Whitespace is ignored.
 func scanStart(s *Scanner) scanFn {
-	switch char := s.char(); char {
+	s.skip(unicode.IsSpace)
+
+	switch char := s.next(); char {
 	case eof:
-		return nil // Break the state machine
+		s.emit(token.EOF)
+		return nil
+	case utf8.RuneError:
+		s.errorf("invalid utf8 character: %U", char)
+		return nil
 	case '#':
 		return scanHash
 	case '/':
 		return scanSlash
 	case '@':
 		return scanAt
-	case '=':
-		return scanEq
-	case ':':
-		return scanColon
-	case '<':
-		return scanLeftAngle
 	default:
 		switch {
-		case bytes.HasPrefix(s.rest(), []byte("HTTP")):
-			return scanHTTPVersion
-		case bytes.HasPrefix(s.rest(), []byte("http")):
-			return scanURL
 		case isIdent(char):
 			return scanText
 		default:
-			s.errorf("unexpected token %q", string(s.char()))
+			s.errorf("unrecognised character: %q", char)
 			return nil
 		}
 	}
 }
 
-// scanHash scans a '#' character.
+// scanHash scans a '#' character, either as the beginning token for a comment
+// or as the first character of a '###' request separator.
 func scanHash(s *Scanner) scanFn {
 	if s.peek() == '#' {
-		return scanRequestSep
+		// It's a request separator
+		return scanSeparator
 	}
 
-	s.next() // Consume the '#'
-
-	// Ignore any (non line terminating) whitespace between the
-	// '#' and the comment text
-	s.skip(isLineSpace)
-
-	// Requests may have '# @name [=] <text>' as an alternative way
-	// of setting their name
-	if s.char() == '@' {
-		return scanAt
-	}
-
-	// Now absorb any text until the the end of the line or eof
-	for s.char() != '\n' && s.char() != eof {
-		s.next()
-	}
-
-	s.emit(token.Comment)
-	s.skip(unicode.IsSpace) // Whitespace after a comment doesn't matter
-	return scanStart
+	return scanComment
 }
 
-// scanSlash scans a '/' character.
-func scanSlash(s *Scanner) scanFn {
-	// Part of some other text we don't care about
-	if s.peek() != '/' {
-		s.next()
-		return scanStart
-	}
-
-	// It's a '//' style comment, consume both '//'
-	s.next()
-	s.next()
-
-	// Ignore any (non line terminating) whitespace between the
-	// '//' and the comment text
-	s.skip(isLineSpace)
-
-	// Requests may have '// @name [=] <text>' as an alternative way
-	// of setting their name
-	if s.char() == '@' {
-		return scanAt
-	}
-
-	// Now absorb any text until the the end of the line or eof
-	for s.char() != '\n' && s.char() != eof {
-		s.next()
-	}
-
-	s.emit(token.Comment)
-	s.skip(unicode.IsSpace) // Whitespace after a comment doesn't matter
-	return scanStart
-}
-
-// scanText scans a string of continuous characters, stopping at the first
-// whitespace character.
-func scanText(s *Scanner) scanFn {
-	for !unicode.IsSpace(s.char()) && s.char() != eof {
-		s.next()
-	}
-
-	text := string(s.src[s.start:s.pos])
-	kind, method := token.Method(text)
-	if method {
-		// GET {space but not \n} <url> [HTTP Version]
-		s.emit(kind)
-		s.skip(isLineSpace)
-		return scanURL
-	}
-
-	s.emit(kind)
-	s.skip(unicode.IsSpace)
-	return scanStart
-}
-
-// scanURL scans a URL, which for now we assume is anything that isn't
-// whitespace.
-func scanURL(s *Scanner) scanFn {
-	// TODO(@FollowTheProcess): Can we handle arbitrary whitespace in a URL?
-	// If so we could support the multiline URL thing from the spec which currently
-	// we don't. The parser would just remove all whitespace from the URL before
-	// storing it in the structure.
-	for !unicode.IsSpace(s.char()) && s.char() != eof {
-		s.next()
-	}
-
-	s.emit(token.URL)
-	s.skip(isLineSpace)
-
-	// If the thing next starts with 'HTTP' then it's a http version
-	// declaration
-	if bytes.HasPrefix(s.rest(), []byte("HTTP")) {
-		return scanHTTPVersion
-	}
-
-	// Skip to the next line
-	if s.char() == '\n' {
-		s.next()
-		s.start = s.pos
-	}
-
-	// If there is now characters and not another newline, it should be request headers
-	if isAlpha(s.char()) {
-		return scanHeaders
-	}
-
-	// Otherwise it's either a body or another request
-	s.skip(unicode.IsSpace)
-	if bytes.HasPrefix(s.rest(), []byte("###")) {
-		return scanStart
-	}
-
-	return scanBody
-}
-
-// scanRequestSep scans the literal '###' request separator. No '#'
-// have been consumed yet but by the time this is called we know that:
-//   - s.char() == '#'
-//   - s.peek() == '#'
+// scanComment scans a line comment started by either a '#' or '//'.
 //
-// A request separator may either be followed by a '\n' or
-// a line of arbitrary text which is the name of the request.
-func scanRequestSep(s *Scanner) scanFn {
+// The comment opening character(s) have already been consumed.
+func scanComment(s *Scanner) scanFn {
+	// It must be a comment, skip any leading whitespace between the marker
+	// and the comment text
+	s.skip(isLineSpace)
+
+	// Requests may have '{//|#} @ident [=] <text>' to set request-scoped
+	// variables
+	if s.peek() == '@' {
+		s.next() // Consume the '@'
+		return scanAt
+	}
+
+	// Absorb everything until the end of the line or eof
+	s.takeUntil('\n', eof)
+
+	s.emit(token.Comment)
+
+	return scanStart
+}
+
+// scanSlash scans a '/' character, either as the beginning of a '//' style comment
+// or as part of some other text we don't care about.
+func scanSlash(s *Scanner) scanFn {
+	if s.peek() != '/' {
+		// Ignore
+		s.next()
+		return scanStart
+	}
+
+	s.next() // Consume the second '/'
+
+	return scanComment
+}
+
+// scanSeparator scans the literal '###' used as a request separator.
+func scanSeparator(s *Scanner) scanFn {
 	// Absorb no more than 3 '#'
 	count := 0
+
 	const sepLength = 3 // len("###")
-	for s.char() == '#' {
+
+	for s.peek() == '#' {
 		count++
+
 		s.next()
+
 		if count == sepLength {
 			break
 		}
 	}
 
-	s.emit(token.RequestSeparator)
+	s.emit(token.Separator)
 
-	if !unicode.IsSpace(s.char()) && !isAlpha(s.char()) && s.char() != eof {
-		s.errorf(
-			"bad request name character %q, request names may only begin with ASCII letters",
-			s.char(),
-		)
-		s.next()
-		return scanStart
-	}
-
-	// If we have any text on the same line, it's the request name
+	// If there is text on the same line as the separator it is a request comment
 	s.skip(isLineSpace)
 
-	if isAlpha(s.char()) {
-		return scanRequestName
+	if s.peek() != '\n' && s.peek() != eof {
+		return scanComment
 	}
 
-	s.skip(unicode.IsSpace)
 	return scanStart
 }
 
-// scanRequestName scans the name of a request after the separator '###'.
-func scanRequestName(s *Scanner) scanFn {
-	s.skip(unicode.IsSpace)
-
-	// Scan the request name which is any char up until
-	// the next '\n' or eof.
-	for s.char() != '\n' && s.char() != eof {
-		s.next()
-	}
-
-	s.emit(token.Text)
-	s.skip(unicode.IsSpace)
-	return scanStart
-}
-
-// scanAt scans a '@' character.
+// scanAt scans an '@' character, used to declare a variable either globally
+// scoped at the top level `@name = thing` or request scoped `# @name = thing`.
 func scanAt(s *Scanner) scanFn {
-	s.next() // Consume the '@'
 	s.emit(token.At)
 
-	if isAlpha(s.char()) {
+	if bytes.HasPrefix(s.src[s.pos:], []byte("http")) {
+		return scanURL
+	}
+
+	if isAlpha(s.peek()) {
+		// @ident [=] <value>
 		return scanIdent
 	}
 
 	return scanStart
 }
 
-// scanIdent scans an identifier.
+// scanIdent scans an ident, that is; a continuous sequence of
+// characters that are valid as an identifier.
 func scanIdent(s *Scanner) scanFn {
-	for isIdent(s.char()) {
-		s.next()
+	s.takeWhile(isIdent)
+
+	// Is it a keyword? If so token.Keyword will return it's
+	// proper token type, else [token.Ident].
+	// Either way we need to emit it and then check for an optional '='
+	text := string(s.src[s.start:s.pos])
+	kind, _ := token.Keyword(text)
+	s.emit(kind)
+	s.skip(isLineSpace)
+
+	switch {
+	case kind == token.Prompt:
+		// Prompts are handled in a special way as you may have e.g.
+		// @prompt username <Arbitrary description on a single line>
+		return scanPrompt
+	case s.peek() == '=':
+		// @var = value
+		return scanEq
+	case isAlphaNumeric(s.peek()):
+		// @var value
+		return scanText
+	default:
+		return scanStart
+	}
+}
+
+// scanPrompt scans a variable prompt e.g. @prompt username [description]\n.
+//
+// The '@' and the 'prompt' have already been consumed and their tokens emitted.
+func scanPrompt(s *Scanner) scanFn {
+	// The first thing up should be the name of the variable we're prompting
+	// for, which follows standard ident rules
+	s.takeWhile(isIdent)
+	s.emit(token.Ident)
+
+	// Arbitrary space is allowed so long as it's on the same line
+	s.skip(isLineSpace)
+
+	// If the next thing looks like regular text, this is the optional
+	// description for the prompt
+	if isAlphaNumeric(s.peek()) {
+		s.takeUntil('\n', eof)
+		s.emit(token.Text)
 	}
 
-	// Is it a keyword?
+	return scanStart
+}
+
+// scanEq scans a '=' character, as used in a variable declaration.
+func scanEq(s *Scanner) scanFn {
+	s.next()
+	s.emit(token.Eq)
+
+	s.skip(isLineSpace)
+
+	if bytes.HasPrefix(s.src[s.pos:], []byte("http")) {
+		return scanURL
+	}
+
+	if isAlphaNumeric(s.peek()) {
+		return scanText
+	}
+
+	return scanStart
+}
+
+// scanText scans a series of continuous text characters (no whitespace).
+func scanText(s *Scanner) scanFn {
+	s.takeWhile(isText)
+
+	// Is it a HTTP Method? If so token.Method will return it's
+	// proper token type, else [token.Text].
 	text := string(s.src[s.start:s.pos])
-	if kind, ok := token.Keyword(text); ok {
-		// Yes, it is
-		s.emit(kind)
-		s.skip(unicode.IsSpace)
+	kind, wasMethod := token.Method(text)
+	s.emit(kind)
+	s.skip(isLineSpace)
+
+	// If it was a HTTP method, we should now have a url following it
+	if wasMethod {
+		return scanURL
+	}
+
+	return scanStart
+}
+
+// scanURL scans a series continuous characters (no whitespace) and emits a URL token.
+func scanURL(s *Scanner) scanFn {
+	// It might also be an interpolation
+	if !bytes.HasPrefix(s.src[s.pos:], []byte("http")) && !bytes.HasPrefix(s.src[s.pos:], []byte("{{")) {
+		s.errorf("HTTP methods must be followed by a valid URL")
+		return nil
+	}
+
+	s.takeWhile(isText)
+	s.emit(token.URL)
+
+	// Does it have a http version after it?
+	s.skip(isLineSpace)
+
+	if bytes.HasPrefix(s.src[s.pos:], []byte("HTTP/")) {
+		return scanHTTPVersion
+	}
+
+	// Is the next thing headers?
+	s.skip(unicode.IsSpace)
+
+	if isAlpha(s.peek()) {
+		return scanHeaders
+	}
+
+	// Either another request or the end
+	if s.peek() == '#' || s.peek() == eof {
 		return scanStart
 	}
 
-	s.emit(token.Ident)
-	s.skip(unicode.IsSpace)
-	return scanStart
+	return scanBody
 }
 
-// scanEq scans a '=' character.
-func scanEq(s *Scanner) scanFn {
-	s.next() // Consume the '='
-	s.emit(token.Eq)
-	s.skip(isLineSpace)
-	return scanStart
-}
-
-// scanColon scans a ':' character.
-func scanColon(s *Scanner) scanFn {
-	s.next() // ':'
-	s.emit(token.Colon)
-	s.skip(isLineSpace)
-	return scanStart
-}
-
-// scanHTTPVersion scans a HTTP version declaration.
+// scanHTTPVersion scans a HTTP/<version> literal.
 //
-// The next characters in s.src are known to be 'HTTP', this consumes
-// the entire thing i.e. 'HTTP/1.1' or 'HTTP/2'.
+// The next characters are known to be 'HTTP/', this function consumes the entire
+// thing e.g. 'HTTP/1.2' or 'HTTP/2'.
 func scanHTTPVersion(s *Scanner) scanFn {
-	const httpLen = 4 // len("HTTP")
+	const httpLen = 5 // len("HTTP/")
 	for range httpLen {
 		s.next()
 	}
 
-	if s.char() != '/' {
-		s.errorf("bad HTTP version character. expected %q got %q", "/", string(s.char()))
-		return nil
-	}
-
-	s.next() // Consume the '/'
-
-	for isDigit(s.char()) {
+	for isDigit(s.peek()) {
 		s.next()
 
-		if s.char() == '.' {
+		if s.peek() == '.' {
 			s.next() // Consume the '.'
-			if !isDigit(s.char()) {
-				s.errorf("bad number literal in HTTP version, illegal char %q", s.char())
+			// Now what follows *must* be a digit or it's malformed
+			if !isDigit(s.peek()) {
+				s.errorf("bad number literal in HTTP version, illegal char %q", s.peek())
 				return nil
 			}
-			for isDigit(s.char()) {
-				s.next()
-			}
+			// Consume any remaining digits
+			s.takeWhile(isDigit)
 		}
 	}
 
 	s.emit(token.HTTPVersion)
-	if s.char() == '\n' {
-		s.next()
-		s.start = s.pos
-	}
 
-	// The only things that can follow a http version
-	// are headers or a body
-	if isAlpha(s.char()) {
+	// The only thing allowed to follow a HTTP Version is a list of headers
+	// or a request body
+	s.skip(unicode.IsSpace)
+
+	if isAlpha(s.peek()) {
+		// Headers
 		return scanHeaders
 	}
 
-	s.skip(unicode.IsSpace)
+	// Either another request or the end
+	if s.peek() == '#' || s.peek() == eof {
+		return scanStart
+	}
+
+	// Scan the body as just raw text, we then use the 'Content-Type' header to
+	// figure out what it should actually be later on during parsing/eval.
 	return scanBody
 }
 
-// scanHeaders scans 1 or more header lines, emitting the right tokens as it goes.
+// scanHeaders scans a series of HTTP headers, one per line, emitting
+// tokens as it goes.
 //
-// It stops when it hits "###", "\n\n" or eof. The first marks the next request
-// in the file, the second is the body separator and obviously eof is eof.
+// It stops when it sees the next character is not a valid ident character and so
+// could not be another header.
 func scanHeaders(s *Scanner) scanFn {
-	for isIdent(s.char()) {
-		s.next()
-	}
+	s.takeWhile(isIdent)
 
-	if s.char() == eof {
+	// Header without a colon or value e.g. 'Content-Type'
+	// this is unfinished so is an error, like an unterminated string literal almost.
+	if s.peek() == eof {
 		s.error("unexpected eof")
 		return nil
 	}
 
 	s.emit(token.Header)
 
-	if s.char() == ':' {
-		s.next()
-		s.emit(token.Colon)
+	if s.peek() != ':' {
+		s.errorf("expected ':' got %q", s.peek())
+		return nil
 	}
 
-	// The value is anything to the end of the line
+	s.next() // Consume the ':' we now know exists
+	s.emit(token.Colon)
 	s.skip(isLineSpace)
-	for s.char() != '\n' && s.char() != eof {
-		s.next()
-	}
 
+	// The value is just arbitrary text until the end of the line
+	s.takeUntil('\n', eof)
 	s.emit(token.Text)
 
-	// Bodies are separated from headers by two newlines
-	if s.char() == '\n' && s.peek() == '\n' {
-		s.skip(unicode.IsSpace)
-		return scanBody
-	}
-
+	// Now for the fun bit, call itself if there are more headers
 	s.skip(unicode.IsSpace)
-	if isAlpha(s.char()) {
-		// Another header, call itself again
+
+	if isAlpha(s.peek()) {
 		return scanHeaders
 	}
 
-	return scanStart
-}
-
-// scanBody scans a request body which is defined as anything up to
-// the next request delimiter, a '--boundary--', or eof.
-func scanBody(s *Scanner) scanFn {
-	// TODO(@FollowTheProcess): Handle multipart --boundary--, it's actually tricky
-	// because the boundary could be any arbitrary text. I guess we just scan '--'
-	// then Text then another '--' and let the parser deal with it?
-	if s.char() == eof {
+	// After headers is either a body, another request separator, or eof
+	if s.peek() == '#' || s.peek() == eof {
 		return scanStart
 	}
 
-	// It's either a file name like < ./input.json
-	// or a response reference like <> ./previous.json
-	if s.char() == '<' {
+	// Must be a body
+	return scanBody
+}
+
+// scanBody scans a HTTP request body, in a variety of forms:
+//
+//   - '< {filepath}' (Reading the request body from the file)
+//   - raw text body
+func scanBody(s *Scanner) scanFn {
+	if s.peek() == '<' {
 		return scanLeftAngle
 	}
 
-	for !bytes.HasPrefix(s.rest(), []byte("###")) && s.char() != eof {
-		s.next()
+	// Are we redirecting the response, without specifying a body
+	// e.g. in a GET request, there is no body but we still might redirect
+	// the response
+	if s.peek() == '>' {
+		return scanRightAngle
 	}
 
+	// Scan raw body as a single token
+	s.takeUntil('#', eof, '>')
 	s.emit(token.Body)
+
 	s.skip(unicode.IsSpace)
+
+	// Are we redirecting the response *after* a body has been specified
+	// e.g. in a POST request, there may be a body *and* a redirect
+	if s.peek() == '>' {
+		return scanRightAngle
+	}
+
 	return scanStart
 }
 
-// scanLeftAngle scans the '<' char.
-//
-// In the context of a request body this can either mean:
-//   - Fetch the body from a file e.g. < ./input.json
-//   - Response reference e.g. <> ./previous.200.json
+// scanLeftAngle scans a '<' literal in the context of a request body
+// read from file.
 func scanLeftAngle(s *Scanner) scanFn {
 	s.next() // Consume the '<'
 	s.emit(token.LeftAngle)
 
-	// Is it a response reference?
-	if s.next() == '>' {
-		s.emit(token.RightAngle)
+	s.skip(isLineSpace)
+
+	if isFilePath(s.peek()) {
+		s.takeWhile(isText)
+		s.emit(token.Text)
 	}
+
+	s.skip(unicode.IsSpace)
+
+	// Are we redirecting the response *after* a body has been specified by a file
+	if s.peek() == '>' {
+		return scanRightAngle
+	}
+
+	return scanStart
+}
+
+// scanRightAngle scans a '>' literal in the context of a response redirect
+// to a local file.
+func scanRightAngle(s *Scanner) scanFn {
+	s.next() // Consume the '>'
+	s.emit(token.RightAngle)
 
 	s.skip(isLineSpace)
 
-	// It must be followed by a text line describing the filepath
-	return scanText
+	if isFilePath(s.peek()) {
+		s.takeWhile(isText)
+		s.emit(token.Text)
+	}
+
+	return scanStart
 }
 
 // isLineSpace reports whether r is a non line terminating whitespace character,
@@ -584,12 +632,27 @@ func isAlpha(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
 }
 
+// isAlphaNumeric reports whether r is an alpha-numeric character.
+func isAlphaNumeric(r rune) bool {
+	return isAlpha(r) || isDigit(r)
+}
+
 // isIdent reports whether r is a valid identifier character.
 func isIdent(r rune) bool {
 	return isAlpha(r) || isDigit(r) || r == '_' || r == '-'
 }
 
+// isText reports whether r is valid in a continuous string of text.
+func isText(r rune) bool {
+	return !unicode.IsSpace(r) && r != eof
+}
+
 // isDigit reports whether r is a valid ASCII digit.
 func isDigit(r rune) bool {
 	return r >= '0' && r <= '9'
+}
+
+// isFilePath reports whether r could be a valid first character in a filepath.
+func isFilePath(r rune) bool {
+	return isIdent(r) || r == '.' || r == '/' || r == '\\'
 }

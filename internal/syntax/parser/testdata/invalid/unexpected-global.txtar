@@ -1,6 +1,5 @@
 -- src.http --
 @base = @£$%^&*()
 -- want.txt --
-unexpected-global.txtar:1:10: unexpected token "£"
-unexpected-global.txtar:1:10: unexpected token EOF, expected one of Timeout, ConnectionTimeout, NoRedirect, Name or Ident
+unexpected-global.txtar:1:12: unrecognised character: '£'
 unexpected-global.txtar:1:7-8: expected one of [URL Text], got At

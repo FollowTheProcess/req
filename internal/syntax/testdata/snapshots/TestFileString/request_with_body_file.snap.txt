@@ -2,7 +2,8 @@
 
 @base = https://api.com/v1
 
-### Another Request
+###
+# @name = AnotherRequest
 POST https://api.com/v1/items/123
 
-<> ./previous.200.json
+< ./body.json

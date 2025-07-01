@@ -85,7 +85,7 @@ func TestShow(t *testing.T) {
 func TestDo(t *testing.T) {
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Date", "fixed")
-		fmt.Fprintf(w, `{"stuff": "here"}`)
+		fmt.Fprint(w, `{"stuff": "here"}`)
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(testHandler))
@@ -113,7 +113,7 @@ Accept: application/json
 		ConnectionTimeout: 500 * time.Millisecond,
 	}
 
-	err = app.Do(file.Name(), "Test", options)
+	err = app.Do(file.Name(), "#1", options)
 	test.Ok(t, err)
 
 	want := `200 OK

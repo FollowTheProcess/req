@@ -362,10 +362,10 @@ func TestFormat(t *testing.T) {
 				},
 				Requests: []spec.Request{
 					{
-						Name:        "Another Request",
-						Method:      http.MethodPost,
-						URL:         "https://api.com/v1/items/123",
-						ResponseRef: "./previous.200.json",
+						Name:         "Another Request",
+						Method:       http.MethodPost,
+						URL:          "https://api.com/v1/items/123",
+						ResponseFile: "./response.json",
 					},
 				},
 			},

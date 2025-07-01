@@ -1,17 +1,30 @@
 -- src.http --
-### Vars
+### Lots of variables here!
+# @name = MyRequest
 // @no-redirect
 # @timeout 10s
 // @connection-timeout = 5s
-GET https://users.com/api/v1/items/123
+@prompt id The ID of the user to get
+@something yes
+GET https://users.com/api/v1/items/{{id}}
 -- want.json --
 {
   "name": "request-vars.txtar",
   "requests": [
     {
-      "name": "Vars",
+      "vars": {
+        "something": "yes"
+      },
+      "prompts": [
+        {
+          "name": "id",
+          "description": "The ID of the user to get"
+        }
+      ],
+      "name": "MyRequest",
+      "comment": "Lots of variables here!",
       "method": "GET",
-      "url": "https://users.com/api/v1/items/123",
+      "url": "https://users.com/api/v1/items/{{id}}",
       "timeout": 10000000000,
       "connectionTimeout": 5000000000,
       "noRedirect": true

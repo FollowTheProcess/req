@@ -72,7 +72,7 @@ func TestPositionString(t *testing.T) {
 	}
 }
 
-func TestFormat(t *testing.T) {
+func TestFileString(t *testing.T) {
 	tests := []struct {
 		name string      // Name of the test case
 		file syntax.File // File under test
@@ -121,9 +121,30 @@ func TestFormat(t *testing.T) {
 				},
 				Requests: []syntax.Request{
 					{
-						Name:   "A simple request",
-						Method: http.MethodGet,
-						URL:    "https://api.com/v1/items/123",
+						Comment: "A simple request",
+						Name:    "GetItem",
+						Method:  http.MethodGet,
+						URL:     "https://api.com/v1/items/123",
+					},
+				},
+			},
+		},
+		{
+			name: "global prompt",
+			file: syntax.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Prompts: []syntax.Prompt{
+					{Name: "colour", Description: "The colour of something"},
+				},
+				Requests: []syntax.Request{
+					{
+						Comment: "A simple request",
+						Name:    "SimpleRequest",
+						Method:  http.MethodGet,
+						URL:     "https://api.com/v1/items/123",
 					},
 				},
 			},
@@ -137,7 +158,6 @@ func TestFormat(t *testing.T) {
 				},
 				Requests: []syntax.Request{
 					{
-						Name:   "Another Request",
 						Method: http.MethodPost,
 						URL:    "https://api.com/v1/items/123",
 						Headers: map[string]string{
@@ -158,7 +178,8 @@ func TestFormat(t *testing.T) {
 				},
 				Requests: []syntax.Request{
 					{
-						Name:              "Another Request",
+						Name:              "AnotherRequest",
+						Comment:           "This time it's a POST",
 						Method:            http.MethodPost,
 						URL:               "https://api.com/v1/items/123",
 						Timeout:           3 * time.Second,
@@ -177,7 +198,7 @@ func TestFormat(t *testing.T) {
 				},
 				Requests: []syntax.Request{
 					{
-						Name:     "Another Request",
+						Name:     "AnotherRequest",
 						Method:   http.MethodPost,
 						URL:      "https://api.com/v1/items/123",
 						BodyFile: "./body.json",
@@ -194,16 +215,17 @@ func TestFormat(t *testing.T) {
 				},
 				Requests: []syntax.Request{
 					{
-						Name:   "Another Request",
-						Method: http.MethodPost,
-						URL:    "https://api.com/v1/items/123",
-						Body:   []byte(`{"some": "json", "here": "yes"}`),
+						Name:    "PostJSON",
+						Comment: "This time with JSON body",
+						Method:  http.MethodPost,
+						URL:     "https://api.com/v1/items/123",
+						Body:    []byte(`{"some": "json", "here": "yes"}`),
 					},
 				},
 			},
 		},
 		{
-			name: "request with response ref",
+			name: "request with response file",
 			file: syntax.File{
 				Name: "Requests",
 				Vars: map[string]string{
@@ -211,10 +233,27 @@ func TestFormat(t *testing.T) {
 				},
 				Requests: []syntax.Request{
 					{
-						Name:        "Another Request",
-						Method:      http.MethodPost,
-						URL:         "https://api.com/v1/items/123",
-						ResponseRef: "./previous.200.json",
+						Method:       http.MethodPost,
+						URL:          "https://api.com/v1/items/123",
+						ResponseFile: "./response.json",
+					},
+				},
+			},
+		},
+		{
+			name: "request with prompts",
+			file: syntax.File{
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []syntax.Request{
+					{
+						Method:       http.MethodPost,
+						URL:          "https://api.com/v1/items/{{id}}",
+						ResponseFile: "./response.json",
+						Prompts: []syntax.Prompt{
+							{Name: "id", Description: "The ID of the item"},
+						},
 					},
 				},
 			},
@@ -223,7 +262,12 @@ func TestFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			snap := snapshot.New(t, snapshot.Update(*update), snapshot.Clean(*clean))
+			snap := snapshot.New(
+				t,
+				snapshot.Update(*update),
+				snapshot.Clean(*clean),
+				snapshot.Color(true),
+			)
 			snap.Snap(tt.file.String())
 		})
 	}
@@ -255,6 +299,7 @@ func FuzzPosition(f *testing.F) {
 				endCol,
 			)
 			test.Equal(t, got, want)
+
 			return
 		}
 
@@ -294,6 +339,7 @@ func FuzzPosition(f *testing.F) {
 		if startCol == endCol {
 			want := fmt.Sprintf("%s:%d:%d", name, line, startCol)
 			test.Equal(t, got, want)
+
 			return
 		}
 

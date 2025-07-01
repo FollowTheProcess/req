@@ -36,6 +36,7 @@ linters:
     - nestif # cyclop does this
     - nlreturn # Similar to wsl, I think best left to judgement
     - nonamedreturns # Named returns are often helpful, it's naked returns that are the issue
+    - noinlineerr # This is more readable in some cases
     - paralleltest # I've never had Go tests take longer than a few seconds, it's fine
     - unparam # gopls is better and more subtle
     - varnamelen # Lots of false positives of things that are fine

@@ -44,6 +44,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.l.SelectedItem() != nil {
 				m.selected = m.l.SelectedItem().FilterValue()
 			}
+
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
@@ -51,7 +52,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
+
 	m.l, cmd = m.l.Update(msg)
+
 	return m, cmd
 }
 

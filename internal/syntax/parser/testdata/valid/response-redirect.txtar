@@ -1,17 +1,18 @@
 -- src.http --
-### Response Reference
+### Response redirect
 GET https://api.somewhere.com/items/1
 
-<> ./previous.200.json
+> ./response.json
 -- want.json --
 {
-  "name": "response-reference.txtar",
+  "name": "response-redirect.txtar",
   "requests": [
     {
-      "name": "Response Reference",
+      "name": "#1",
+      "comment": "Response redirect",
       "method": "GET",
       "url": "https://api.somewhere.com/items/1",
-      "responseRef": "./previous.200.json"
+      "responseFile": "./response.json"
     }
   ]
 }

@@ -19,7 +19,9 @@ func TestString(t *testing.T) {
 			tok.End,
 		)
 	}
-	if err := quick.Check(f, nil); err != nil {
+
+	err := quick.Check(f, nil)
+	if err != nil {
 		t.Fatal(err)
 	}
 }
@@ -54,48 +56,6 @@ func TestMethod(t *testing.T) {
 	}
 }
 
-func TestIsMethod(t *testing.T) {
-	tests := []struct {
-		kind token.Kind // Kind under test
-		want bool       // Expected IsMethod return value
-	}{
-		{kind: token.MethodGet, want: true},
-		{kind: token.MethodHead, want: true},
-		{kind: token.MethodPost, want: true},
-		{kind: token.MethodPut, want: true},
-		{kind: token.MethodDelete, want: true},
-		{kind: token.MethodConnect, want: true},
-		{kind: token.MethodPatch, want: true},
-		{kind: token.MethodOptions, want: true},
-		{kind: token.MethodTrace, want: true},
-		{kind: token.EOF, want: false},
-		{kind: token.Comment, want: false},
-		{kind: token.Text, want: false},
-		{kind: token.URL, want: false},
-		{kind: token.Header, want: false},
-		{kind: token.Body, want: false},
-		{kind: token.Ident, want: false},
-		{kind: token.RequestSeparator, want: false},
-		{kind: token.At, want: false},
-		{kind: token.Eq, want: false},
-		{kind: token.Colon, want: false},
-		{kind: token.LeftAngle, want: false},
-		{kind: token.RightAngle, want: false},
-		{kind: token.HTTPVersion, want: false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.kind.String(), func(t *testing.T) {
-			test.Equal(
-				t,
-				token.IsMethod(tt.kind),
-				tt.want,
-				test.Context("IsMethod(%s) mismatch", tt.kind),
-			)
-		})
-	}
-}
-
 func TestKeyword(t *testing.T) {
 	tests := []struct {
 		text string     // Text input
@@ -117,52 +77,6 @@ func TestKeyword(t *testing.T) {
 			got, ok := token.Keyword(tt.text)
 			test.Equal(t, ok, tt.ok)
 			test.Equal(t, got, tt.want)
-		})
-	}
-}
-
-func TestIsKeyword(t *testing.T) {
-	tests := []struct {
-		kind token.Kind // Kind under test
-		want bool       // Expected IsKeyword return value
-	}{
-		{kind: token.Name, want: true},
-		{kind: token.Timeout, want: true},
-		{kind: token.ConnectionTimeout, want: true},
-		{kind: token.NoRedirect, want: true},
-		{kind: token.MethodGet, want: false},
-		{kind: token.MethodHead, want: false},
-		{kind: token.MethodPost, want: false},
-		{kind: token.MethodPut, want: false},
-		{kind: token.MethodDelete, want: false},
-		{kind: token.MethodConnect, want: false},
-		{kind: token.MethodPatch, want: false},
-		{kind: token.MethodOptions, want: false},
-		{kind: token.MethodTrace, want: false},
-		{kind: token.EOF, want: false},
-		{kind: token.Comment, want: false},
-		{kind: token.Text, want: false},
-		{kind: token.URL, want: false},
-		{kind: token.Header, want: false},
-		{kind: token.Body, want: false},
-		{kind: token.Ident, want: false},
-		{kind: token.RequestSeparator, want: false},
-		{kind: token.At, want: false},
-		{kind: token.Eq, want: false},
-		{kind: token.Colon, want: false},
-		{kind: token.LeftAngle, want: false},
-		{kind: token.RightAngle, want: false},
-		{kind: token.HTTPVersion, want: false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.kind.String(), func(t *testing.T) {
-			test.Equal(
-				t,
-				token.IsKeyword(tt.kind),
-				tt.want,
-				test.Context("IsKeyword(%s) mismatch", tt.kind),
-			)
 		})
 	}
 }

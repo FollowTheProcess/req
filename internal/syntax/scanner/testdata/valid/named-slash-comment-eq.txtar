@@ -3,7 +3,7 @@
 // @name = MyRequest
 GET https://api.somewhere.com/items/1
 -- tokens.txt --
-<Token::RequestSeparator start=0, end=3>
+<Token::Separator start=0, end=3>
 <Token::At start=7, end=8>
 <Token::Name start=8, end=12>
 <Token::Eq start=13, end=14>

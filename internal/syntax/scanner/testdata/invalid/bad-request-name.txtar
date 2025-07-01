@@ -1,8 +1,0 @@
--- src.http --
-###1 Request plz
--- tokens.txt --
-<Token::RequestSeparator start=0, end=3>
-<Token::EOF start=4, end=4>
--- errors.txt --
-bad-request-name.txtar:1:4-5: unexpected token " "
-bad-request-name.txtar:1:4: bad request name character '1', request names may only begin with ASCII letters

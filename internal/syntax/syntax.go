@@ -45,6 +45,7 @@ func (p Position) IsValid() bool {
 		(p.EndCol >= 1 && p.EndCol < p.StartCol) {
 		return false
 	}
+
 	return true
 }
 
@@ -81,40 +82,44 @@ func (p Position) String() string {
 
 // File represents a single .http file as parsed.
 //
-// It is *nearly* concrete but may have variable interpolation still to evaluate
-// in a number of fields, URLs may not be valid etc. This is a structured
-// populated from the as-parsed text.
+// It is *nearly* concrete but may have e.g. variable interpolation to perform, URLs
+// may not be valid etc. This is simply a structured version of the as-parsed raw text.
 type File struct {
-	Name              string            `json:"name,omitempty"`              // Name of the file (or @name in global scope if given)
-	Vars              map[string]string `json:"vars,omitempty"`              // Global variables defined at the top level, e.g. base url
-	Requests          []Request         `json:"requests,omitempty"`          // 1 or more HTTP requests
-	Timeout           time.Duration     `json:"timeout,omitempty"`           // Global timeout for all requests
-	ConnectionTimeout time.Duration     `json:"connectionTimeout,omitempty"` // Global connection timeout
-	NoRedirect        bool              `json:"noRedirect,omitempty"`        // Disable following redirects globally
+	// Name of the file (or @name in global scope if given)
+	Name string `json:"name,omitempty"`
+
+	// Global variables
+	Vars map[string]string `json:"vars,omitempty"`
+
+	// Global prompts, the user will be asked to provide values for each of these each time the
+	// file is parsed.
+	//
+	// The provided values will then be stored in Vars.
+	Prompts []Prompt `json:"prompts,omitempty"`
+
+	// The HTTP requests described in the file
+	Requests []Request `json:"requests,omitempty"`
+
+	// Global timeout for all requests
+	Timeout time.Duration `json:"timeout,omitempty"`
+
+	// Global connection timeout for all requests
+	ConnectionTimeout time.Duration `json:"connectionTimeout,omitempty"`
+
+	// Disable following redirects globally across all requests
+	NoRedirect bool `json:"noRedirect,omitempty"`
 }
 
-// Request is a single HTTP request as parsed from a .http file.
-type Request struct {
-	Vars              map[string]string `json:"vars,omitempty"`              // Request scoped variables, override globals if specified
-	Headers           map[string]string `json:"headers,omitempty"`           // Request headers, may have variable interpolation in values but not keys
-	Name              string            `json:"name,omitempty"`              // Optional name, if empty request should be named after it's index e.g. "#1"
-	Method            string            `json:"method,omitempty"`            // The HTTP method e.g. "GET", "POST"
-	URL               string            `json:"url,omitempty"`               // The complete URL, may have variable interpolation e.g. {{base}} or not be valid
-	HTTPVersion       string            `json:"httpVersion,omitempty"`       // Version of the HTTP protocol to use e.g. 1.2
-	BodyFile          string            `json:"bodyFile,omitempty"`          // If the body is to be populated from a local file, this is the path to that file (relative to the .http file)
-	ResponseRef       string            `json:"responseRef,omitempty"`       // If a response reference was provided, this is it's filepath (relative to the .http file)
-	Body              []byte            `json:"body,omitempty"`              // Request body, if provided inline. Again, may have variable interpolation and special things like {{ $uuid }}
-	Timeout           time.Duration     `json:"timeout,omitempty"`           // Request specific timeout, overrides global if set
-	ConnectionTimeout time.Duration     `json:"connectionTimeout,omitempty"` // Request specific connection timeout, overrides global if set
-	NoRedirect        bool              `json:"noRedirect,omitempty"`        // Disable following redirects on this specific request, overrides global if set
-}
-
-// String implements [fmt.Stringer] for [File].
+// String implements [fmt.Stringer] for a [File].
 func (f File) String() string {
 	builder := &strings.Builder{}
 
 	if f.Name != "" {
 		fmt.Fprintf(builder, "@name = %s\n\n", f.Name)
+	}
+
+	for _, prompt := range f.Prompts {
+		builder.WriteString(prompt.String())
 	}
 
 	for _, key := range slices.Sorted(maps.Keys(f.Vars)) {
@@ -145,12 +150,76 @@ func (f File) String() string {
 	return builder.String()
 }
 
-// String implements [fmt.Stringer] for [Request].
+// Request is a single HTTP request from a .http file as parsed.
+//
+// It is *nearly* concrete but may have e.g. variable interpolation to perform, URLs
+// may not be valid etc. This is simply a structured version of the as-parsed raw text.
+type Request struct {
+	// Request scoped variables
+	Vars map[string]string `json:"vars,omitempty"`
+
+	// Request headers, may have variable interpolation in the values but not the keys
+	Headers map[string]string `json:"headers,omitempty"`
+
+	// Request scoped prompts, the user will be asked to provide values for each of these
+	// whenever this particular request is invoked.
+	//
+	// The provided values will then be stored in Vars for future use e.g. as interpolation
+	// in the request body.
+	Prompts []Prompt `json:"prompts,omitempty"`
+
+	// Optional name, if empty request should be named after it's index e.g. "#1"
+	Name string `json:"name,omitempty"`
+
+	// Optional request comment
+	Comment string `json:"comment,omitempty"`
+
+	// The HTTP method
+	Method string `json:"method,omitempty"`
+
+	// The complete URL, may have variable interpolation and/or not be a valid URL
+	URL string `json:"url,omitempty"`
+
+	// Version of the HTTP protocol to use e.g. "1.2"
+	HTTPVersion string `json:"httpVersion,omitempty"`
+
+	// If the body is to be populated by reading a local file, this is the path
+	// to that local file (relative to the .http file)
+	BodyFile string `json:"bodyFile,omitempty"`
+
+	// If a response redirect was provided, this is the path to the local file into
+	// which to write the response (relative to the .http file)
+	ResponseFile string `json:"responseFile,omitempty"`
+
+	// Request body, if provided inline. Again, may have variable interpolation still to perform
+	Body []byte `json:"body,omitempty"`
+
+	// Request scoped timeout, overrides global if set
+	Timeout time.Duration `json:"timeout,omitempty"`
+
+	// Request scoped connection timeout, overrides global if set
+	ConnectionTimeout time.Duration `json:"connectionTimeout,omitempty"`
+
+	// Disable following redirects for this request, overrides global if set
+	NoRedirect bool `json:"noRedirect,omitempty"`
+}
+
+// String implements [fmt.Stringer] for a [Request].
 func (r Request) String() string {
 	builder := &strings.Builder{}
 
+	if r.Comment != "" {
+		fmt.Fprintf(builder, "### %s\n", r.Comment)
+	} else {
+		builder.WriteString("###\n")
+	}
+
 	if r.Name != "" {
-		fmt.Fprintf(builder, "### %s\n", r.Name)
+		fmt.Fprintf(builder, "# @name = %s\n", r.Name)
+	}
+
+	for _, prompt := range r.Prompts {
+		builder.WriteString(prompt.String())
 	}
 
 	for _, key := range slices.Sorted(maps.Keys(r.Vars)) {
@@ -182,7 +251,7 @@ func (r Request) String() string {
 	}
 
 	// Separate the body section
-	if r.Body != nil || r.BodyFile != "" || r.ResponseRef != "" {
+	if r.Body != nil || r.BodyFile != "" || r.ResponseFile != "" {
 		builder.WriteString("\n")
 	}
 
@@ -194,11 +263,29 @@ func (r Request) String() string {
 		fmt.Fprintf(builder, "%s\n", string(r.Body))
 	}
 
-	if r.ResponseRef != "" {
-		fmt.Fprintf(builder, "<> %s\n", r.ResponseRef)
+	if r.ResponseFile != "" {
+		fmt.Fprintf(builder, "> %s\n", r.ResponseFile)
 	}
 
 	return builder.String()
+}
+
+// Prompt represents a variable that requires the user to specify by responding to a prompt.
+type Prompt struct {
+	// Name of the variable into which to store the user provided value
+	Name string `json:"name,omitempty"`
+
+	// Description of the prompt, optional
+	Description string `json:"description,omitempty"`
+}
+
+// String implements [fmt.Stringer] for a [Prompt].
+func (p Prompt) String() string {
+	if p.Description != "" {
+		return fmt.Sprintf("@prompt %s %s\n", p.Name, p.Description)
+	}
+
+	return fmt.Sprintf("@prompt %s\n", p.Name)
 }
 
 // PrettyConsoleHandler returns a [ErrorHandler] that formats the syntax error for
@@ -226,6 +313,7 @@ func PrettyConsoleHandler(w io.Writer) ErrorHandler {
 			if i >= startLine && i <= endLine {
 				margin := fmt.Sprintf("%d | ", i)
 				fmt.Fprintf(w, "%s%s\n", margin, line)
+
 				if i == pos.Line {
 					hue.Red.Fprintf(
 						w,

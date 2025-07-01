@@ -5,8 +5,8 @@ Content-Type: application/json
 Accept: application/json
 X-Something-Else: yes
 -- tokens.txt --
-<Token::RequestSeparator start=0, end=3>
-<Token::Text start=4, end=8>
+<Token::Separator start=0, end=3>
+<Token::Comment start=4, end=8>
 <Token::MethodGet start=9, end=12>
 <Token::URL start=13, end=46>
 <Token::Header start=47, end=59>
