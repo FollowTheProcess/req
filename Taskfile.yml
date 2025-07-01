@@ -33,9 +33,8 @@ tasks:
     desc: Run go fmt on all source files
     sources:
       - "**/*.go"
-      - .golangci.yml
     cmds:
-      - golangci-lint fmt
+      - go fmt ./...
 
   test:
     desc: Run the test suite
@@ -69,13 +68,12 @@ tasks:
       - go test ./... -run None -benchmem -bench . {{ .CLI_ARGS }}
 
   lint:
-    desc: Run the linters and auto-fix if possible
+    desc: Run the linters
     sources:
       - "**/*.go"
-      - .golangci.yml
     preconditions:
-      - sh: command -v golangci-lint
-        msg: golangci-lint not installed, see https://golangci-lint.run/usage/install/#local-installation
+      - sh: command -v staticcheck
+        msg: staticcheck not installed, see https://staticcheck.dev/docs/getting-started/
 
       - sh: command -v typos
         msg: requires typos-cli, run `brew install typos-cli`
@@ -83,7 +81,7 @@ tasks:
       - sh: command -v nilaway
         msg: requires nilaway, see https://github.com/uber-go/nilaway
     cmds:
-      - golangci-lint run --fix
+      - staticcheck -checks all ./...
       - typos
       - nilaway ./...
 
