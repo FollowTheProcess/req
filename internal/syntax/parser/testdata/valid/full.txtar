@@ -1,9 +1,9 @@
 -- src.http --
 ###
-@name Everything
-@timeout 30s
-@connection-timeout 10s
-@no-redirect
+// @name Everything
+# @timeout 30s
+# @connection-timeout 10s
+// @no-redirect
 PUT https://api.somewhere.com/items/1 HTTP/2
 Content-Type: application/json
 Accept: application/json
@@ -39,7 +39,7 @@ Authorization: Bearer {{token}}
       "method": "PUT",
       "url": "https://api.somewhere.com/items/1",
       "httpVersion": "HTTP/2",
-      "body": "ewogICJoZXJlIjogWwogICAgImFyYml0cmFyeSIsCiAgICAianNvbiIKICBdLAogICJpc19hbGxvd2VkIjogewogICAgImluY2x1ZGluZyI6IHsKICAgICAgIm5lc3RlZCI6IFsKICAgICAgICAibGlzdHMiCiAgICAgIF0KICAgIH0KICB9LAogICJzb21lIjogInN0dWZmIgp9Cg==",
+      "body": "ewogICJoZXJlIjogWwogICAgImFyYml0cmFyeSIsCiAgICAianNvbiIKICBdLAogICJpc19hbGxvd2VkIjogewogICAgImluY2x1ZGluZyI6IHsKICAgICAgIm5lc3RlZCI6IFsKICAgICAgICAibGlzdHMiCiAgICAgIF0KICAgIH0KICB9LAogICJzb21lIjogInN0dWZmIgp9",
       "timeout": 30000000000,
       "connectionTimeout": 10000000000,
       "noRedirect": true

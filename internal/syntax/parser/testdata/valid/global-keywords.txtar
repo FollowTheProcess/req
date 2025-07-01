@@ -3,15 +3,23 @@
 @timeout = 20s
 @connection-timeout 10s
 @no-redirect
+@prompt answer The answer to everything
 
 ### Keywords
 GET https://users.com/api/v1/items/123
 -- want.json --
 {
   "name": "Testy",
+  "prompts": [
+    {
+      "name": "answer",
+      "description": "The answer to everything"
+    }
+  ],
   "requests": [
     {
-      "name": "Keywords",
+      "name": "#1",
+      "comment": "Keywords",
       "method": "GET",
       "url": "https://users.com/api/v1/items/123"
     }

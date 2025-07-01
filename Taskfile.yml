@@ -9,6 +9,7 @@ tasks:
   default:
     desc: List all available tasks
     silent: true
+    internal: true
     cmds:
       - task --list
 
@@ -32,6 +33,7 @@ tasks:
     desc: Run go fmt on all source files
     sources:
       - "**/*.go"
+      - .golangci.yml
     cmds:
       - golangci-lint fmt
 

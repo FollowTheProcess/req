@@ -2,7 +2,8 @@
 
 @base = https://api.com/v1
 
-### Another Request
+### This time it's a POST
+# @name = AnotherRequest
 # @timeout = 3s
 # @connection-timeout = 500ms
 # @no-redirect = true

@@ -11,7 +11,7 @@ Execute `.http` files from the command line
 > [!WARNING]
 > **req is in early development and is not yet ready for use**
 
-![caution](./img/caution.png)
+![caution](./docs/img/caution.png)
 
 ## Project Description
 

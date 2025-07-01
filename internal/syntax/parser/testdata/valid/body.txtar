@@ -22,10 +22,11 @@ Content-Type: application/json
       "headers": {
         "Content-Type": "application/json"
       },
-      "name": "Body",
+      "name": "#1",
+      "comment": "Body",
       "method": "POST",
       "url": "https://api.somewhere.com/items/1",
-      "body": "ewogICJib2R5IjogImhlcmUiCiAgInllcyI6IHsKICAgICJmdWxsIjogWyJqc29uIiwgInN5bnRheCJdCiAgfQp9Cg=="
+      "body": "ewogICJib2R5IjogImhlcmUiCiAgInllcyI6IHsKICAgICJmdWxsIjogWyJqc29uIiwgInN5bnRheCJdCiAgfQp9"
     }
   ]
 }

@@ -63,6 +63,7 @@ func New(stdout, stderr io.Writer, debug bool) Req {
 	}
 
 	logger := log.New(stderr, log.WithLevel(level))
+
 	return Req{
 		stdout: stdout,
 		stderr: stderr,
@@ -82,7 +83,9 @@ func (r Req) Check(files []string, options CheckOptions) error {
 
 	for _, file := range files {
 		logger.Debug("Checking", "file", file)
+
 		start := time.Now()
+
 		f, err := os.Open(file)
 		if err != nil {
 			return err
@@ -105,6 +108,7 @@ func (r Req) Check(files []string, options CheckOptions) error {
 	}
 
 	logger.Debug("Took (overall)", "duration", time.Since(overallStart))
+
 	return nil
 }
 
@@ -144,6 +148,7 @@ func (r Req) Show(file string, options ShowOptions) error {
 		}
 
 		fmt.Fprintln(r.stdout, strings.TrimSpace(resolved.String()))
+
 		return nil
 	}
 
@@ -152,6 +157,7 @@ func (r Req) Show(file string, options ShowOptions) error {
 	}
 
 	fmt.Fprintln(r.stdout, strings.TrimSpace(raw.String()))
+
 	return nil
 }
 
@@ -217,6 +223,7 @@ func (r Req) Do(file, name string, options DoOptions) error {
 	client := httpClient(request)
 
 	requestStart := time.Now()
+
 	logger.Debug(
 		"Sending HTTP request",
 		"method",
@@ -258,6 +265,7 @@ func (r Req) Do(file, name string, options DoOptions) error {
 	fmt.Fprintln(r.stdout) // Line space
 
 	fmt.Fprintln(r.stdout, string(body))
+
 	return nil
 }
 

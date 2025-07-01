@@ -52,6 +52,7 @@ func TestValid(t *testing.T) {
 
 			gotJSON, err := json.MarshalIndent(got, "", "  ")
 			test.Ok(t, err, test.Context("could not marshal JSON"))
+
 			gotJSON = append(gotJSON, '\n') // MarshalIndent doesn't do newlines at the end
 
 			if *update {
@@ -60,6 +61,7 @@ func TestValid(t *testing.T) {
 
 				err = txtar.DumpFile(file, archive)
 				test.Ok(t, err)
+
 				return
 			}
 
@@ -109,6 +111,7 @@ func TestInvalid(t *testing.T) {
 
 				err = txtar.DumpFile(file, archive)
 				test.Ok(t, err)
+
 				return
 			}
 
@@ -159,6 +162,7 @@ func FuzzParser(f *testing.F) {
 // the enclosing test.
 func testFailHandler(tb testing.TB) syntax.ErrorHandler {
 	tb.Helper()
+
 	return func(pos syntax.Position, msg string) {
 		tb.Fatalf("%s: %s", pos, msg)
 	}
@@ -170,9 +174,16 @@ type errorCollector struct {
 }
 
 func (e *errorCollector) String() string {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	errsCopy := slices.Clone(e.errs)
+
 	var s strings.Builder
-	slices.Sort(e.errs) // Deterministic
-	for _, err := range e.errs {
+
+	slices.Sort(errsCopy) // Deterministic
+
+	for _, err := range errsCopy {
 		s.WriteString(err)
 	}
 
@@ -185,6 +196,7 @@ func (e *errorCollector) handler() syntax.ErrorHandler {
 		// handler
 		e.mu.Lock()
 		defer e.mu.Unlock()
+
 		e.errs = append(e.errs, fmt.Sprintf("%s: %s\n", pos, msg))
 	}
 }

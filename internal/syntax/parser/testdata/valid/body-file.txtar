@@ -1,5 +1,5 @@
 -- src.http --
-### Body File
+### Read the body from ./input.json
 POST https://api.somewhere.com/items/1
 Content-Type: application/json
 
@@ -12,7 +12,8 @@ Content-Type: application/json
       "headers": {
         "Content-Type": "application/json"
       },
-      "name": "Body File",
+      "name": "#1",
+      "comment": "Read the body from ./input.json",
       "method": "POST",
       "url": "https://api.somewhere.com/items/1",
       "bodyFile": "./input.json"

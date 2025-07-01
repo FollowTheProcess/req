@@ -32,6 +32,7 @@ func Build() (*cli.Command, error) {
 // check returns the check subcommand.
 func check() (*cli.Command, error) {
 	var options req.CheckOptions
+
 	return cli.New(
 		"check",
 		cli.Short("Check .http files for syntax errors"),
@@ -47,6 +48,7 @@ func check() (*cli.Command, error) {
 // show returns the show subcommand.
 func show() (*cli.Command, error) {
 	var options req.ShowOptions
+
 	return cli.New(
 		"show",
 		cli.Short("Show the contents of a .http file"),
@@ -78,6 +80,7 @@ Responses can be saved to a file with the '--output' flag.
 // do returns the do subcommand.
 func do() (*cli.Command, error) {
 	var options req.DoOptions
+
 	return cli.New(
 		"do",
 		cli.Short("Execute a http request from a file"),

@@ -1,7 +1,10 @@
 // Package token provides the set of lexical tokens for a .http file.
 package token
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // Kind is the kind of a token.
 type Kind int
@@ -9,19 +12,20 @@ type Kind int
 //go:generate stringer -type Kind -linecomment
 const (
 	EOF               Kind = iota // EOF
+	Error                         // Error
+	Separator                     // Separator
 	Comment                       // Comment
 	Text                          // Text
 	URL                           // URL
-	Header                        // Header
-	Body                          // Body
 	Ident                         // Ident
-	RequestSeparator              // RequestSeparator
 	At                            // At
 	Eq                            // Eq
 	Colon                         // Colon
 	LeftAngle                     // LeftAngle
 	RightAngle                    // RightAngle
 	HTTPVersion                   // HTTPVersion
+	Header                        // Header
+	Body                          // Body
 	MethodGet                     // MethodGet
 	MethodHead                    // MethodHead
 	MethodPost                    // MethodPost
@@ -32,6 +36,7 @@ const (
 	MethodOptions                 // MethodOptions
 	MethodTrace                   // MethodTrace
 	Name                          // Name
+	Prompt                        // Prompt
 	Timeout                       // Timeout
 	ConnectionTimeout             // ConnectionTimeout
 	NoRedirect                    // NoRedirect
@@ -44,9 +49,14 @@ type Token struct {
 	End   int  // Byte offset from the start of the file to the end of this token
 }
 
-// String returns a string representation of a [Token].
+// String implement [fmt.Stringer] for a [Token].
 func (t Token) String() string {
 	return fmt.Sprintf("<Token::%s start=%d, end=%d>", t.Kind, t.Start, t.End)
+}
+
+// Is reports whether the token is any of the provided [Kind]s.
+func (t Token) Is(kinds ...Kind) bool {
+	return slices.Contains(kinds, t.Kind)
 }
 
 // Method reports whether a string refers to a HTTP method, returning it's
@@ -87,6 +97,8 @@ func Keyword(text string) (kind Kind, ok bool) {
 	switch text {
 	case "name":
 		return Name, true
+	case "prompt":
+		return Prompt, true
 	case "timeout":
 		return Timeout, true
 	case "connection-timeout":
@@ -96,9 +108,4 @@ func Keyword(text string) (kind Kind, ok bool) {
 	default:
 		return Ident, false
 	}
-}
-
-// IsKeyword reports whether the given kind is a keyword.
-func IsKeyword(kind Kind) bool {
-	return kind >= Name && kind <= NoRedirect
 }

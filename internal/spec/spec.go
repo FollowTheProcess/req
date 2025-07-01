@@ -29,31 +29,32 @@ const (
 //
 // It may be constructed with [ResolveFile] from a [syntax.File].
 type File struct {
-	Name              string            `json:"name,omitempty"`              // Name of the file (or @name in global scope if given)
-	Vars              map[string]string `json:"vars,omitempty"`              // Global variables defined at the top level, e.g. base url
-	Requests          []Request         `json:"requests,omitempty"`          // 1 or more HTTP requests
-	Timeout           time.Duration     `json:"timeout,omitempty"`           // Global timeout for all requests
-	ConnectionTimeout time.Duration     `json:"connectionTimeout,omitempty"` // Global connection timeout
-	NoRedirect        bool              `json:"noRedirect,omitempty"`        // Disable following redirects globally
+	// Name of the file (or @name in global scope if given)
+	Name string `json:"name,omitempty"`
+
+	// Global variables defined at the top level, e.g. base url
+	Vars map[string]string `json:"vars,omitempty"`
+
+	// Global prompts, the user will be asked to provide values for each of these each time the
+	// file is parsed.
+	//
+	// The provided values will then be stored in Vars.
+	Prompts []Prompt `json:"prompts,omitempty"`
+
+	// The HTTP requests described in the file
+	Requests []Request `json:"requests,omitempty"`
+
+	// Global timeout for all requests
+	Timeout time.Duration `json:"timeout,omitempty"`
+
+	// Global connection timeout for all requests
+	ConnectionTimeout time.Duration `json:"connectionTimeout,omitempty"`
+
+	// Disable following redirects globally
+	NoRedirect bool `json:"noRedirect,omitempty"`
 }
 
-// A Request represents a single HTTP request described in a [File].
-type Request struct {
-	Vars              map[string]string `json:"vars,omitempty"`              // Request scoped variables, override globals if specified
-	Headers           map[string]string `json:"headers,omitempty"`           // Request headers, may have variable interpolation in values but not keys
-	Name              string            `json:"name,omitempty"`              // Name of the request, either set at parse time or #1 after it's index (1 based)
-	Method            string            `json:"method,omitempty"`            // The HTTP method e.g. "GET", "POST"
-	URL               string            `json:"url,omitempty"`               // The complete URL with any variable interpolation evaluated
-	HTTPVersion       string            `json:"httpVersion,omitempty"`       // Version of the HTTP protocol to use e.g. 1.2
-	BodyFile          string            `json:"bodyFile,omitempty"`          // If the body is to be populated from a local file, this is the path to that file (relative to the .http file)
-	ResponseRef       string            `json:"responseRef,omitempty"`       // If a response reference was provided, this is it's filepath (relative to the .http file)
-	Body              []byte            `json:"body,omitempty"`              // Request body, if provided inline. Again, variable interpolation and special things like {{ $random.uuid }} have been evaluated
-	Timeout           time.Duration     `json:"timeout,omitempty"`           // Request specific timeout, overrides global if set
-	ConnectionTimeout time.Duration     `json:"connectionTimeout,omitempty"` // Request specific connection timeout, overrides global if set
-	NoRedirect        bool              `json:"noRedirect,omitempty"`        // Disable following redirects on this specific request, overrides global if set
-}
-
-// String implements [fmt.Stringer] for [File].
+// String implements [fmt.Stringer] for a [File].
 func (f File) String() string {
 	builder := &strings.Builder{}
 
@@ -61,16 +62,20 @@ func (f File) String() string {
 		fmt.Fprintf(builder, "@name = %s\n\n", f.Name)
 	}
 
+	for _, prompt := range f.Prompts {
+		builder.WriteString(prompt.String())
+	}
+
 	for _, key := range slices.Sorted(maps.Keys(f.Vars)) {
 		fmt.Fprintf(builder, "@%s = %s\n", key, f.Vars[key])
 	}
 
 	// Only show timeouts if they are non-default
-	if f.Timeout != DefaultTimeout && f.Timeout != 0 {
+	if f.Timeout != 0 {
 		fmt.Fprintf(builder, "@timeout = %s\n", f.Timeout)
 	}
 
-	if f.ConnectionTimeout != DefaultConnectionTimeout && f.ConnectionTimeout != 0 {
+	if f.ConnectionTimeout != 0 {
 		fmt.Fprintf(builder, "@connection-timeout = %s\n", f.ConnectionTimeout)
 	}
 
@@ -100,12 +105,73 @@ func (f File) GetRequest(name string) (Request, bool) {
 	return Request{}, false
 }
 
-// String implements [fmt.Stringer] for [Request].
+// A Request represents a single HTTP request described in a [File].
+type Request struct {
+	// Request scoped variables, override globals if specified
+	Vars map[string]string `json:"vars,omitempty"`
+
+	// Request headers, may have variable interpolation in values but not keys
+	Headers map[string]string `json:"headers,omitempty"`
+
+	// Request scoped prompts, the user will be asked to provide values for each of these
+	// whenever this particular request is invoked.
+	//
+	// The provided values will then be stored in Vars for future use e.g. as interpolation
+	// in the request body.
+	Prompts []Prompt `json:"prompts,omitempty"`
+
+	// Optional name, if empty request should be named after it's index e.g. "#1"
+	Name string `json:"name,omitempty"`
+
+	// Optional request comment
+	Comment string `json:"comment,omitempty"`
+
+	// The HTTP method
+	Method string `json:"method,omitempty"`
+
+	// The complete URL with any variable interpolation evaluated
+	URL string `json:"url,omitempty"`
+
+	// Version of the HTTP protocol to use e.g. "1.2"
+	HTTPVersion string `json:"httpVersion,omitempty"`
+
+	// If the body is to be populated by reading a local file, this is the path
+	// to that local file (relative to the .http file)
+	BodyFile string `json:"bodyFile,omitempty"`
+
+	// If a response redirect was provided, this is the path to the local file into
+	// which to write the response (relative to the .http file)
+	ResponseFile string `json:"responseFile,omitempty"`
+
+	// Request body, if provided inline. Again, variable interpolation and special things like {{ $random.uuid }} have been evaluated
+	Body []byte `json:"body,omitempty"`
+
+	// Request scoped timeout, overrides global if set
+	Timeout time.Duration `json:"timeout,omitempty"`
+
+	// Request scoped connection timeout, overrides global if set
+	ConnectionTimeout time.Duration `json:"connectionTimeout,omitempty"`
+
+	// Disable following redirects for this request, overrides global if set
+	NoRedirect bool `json:"noRedirect,omitempty"`
+}
+
+// String implements [fmt.Stringer] for a [Request].
 func (r Request) String() string {
 	builder := &strings.Builder{}
 
+	if r.Comment != "" {
+		fmt.Fprintf(builder, "### %s\n", r.Comment)
+	} else {
+		builder.WriteString("###\n")
+	}
+
 	if r.Name != "" {
-		fmt.Fprintf(builder, "### %s\n", r.Name)
+		fmt.Fprintf(builder, "# @name = %s\n", r.Name)
+	}
+
+	for _, prompt := range r.Prompts {
+		builder.WriteString(prompt.String())
 	}
 
 	for _, key := range slices.Sorted(maps.Keys(r.Vars)) {
@@ -113,11 +179,11 @@ func (r Request) String() string {
 	}
 
 	// Only show timeouts if they are non-default
-	if r.Timeout != DefaultTimeout && r.Timeout != 0 {
+	if r.Timeout != 0 {
 		fmt.Fprintf(builder, "# @timeout = %s\n", r.Timeout)
 	}
 
-	if r.ConnectionTimeout != DefaultConnectionTimeout && r.ConnectionTimeout != 0 {
+	if r.ConnectionTimeout != 0 {
 		fmt.Fprintf(builder, "# @connection-timeout = %s\n", r.ConnectionTimeout)
 	}
 
@@ -137,7 +203,7 @@ func (r Request) String() string {
 	}
 
 	// Separate the body section
-	if r.Body != nil || r.BodyFile != "" || r.ResponseRef != "" {
+	if r.Body != nil || r.BodyFile != "" || r.ResponseFile != "" {
 		builder.WriteString("\n")
 	}
 
@@ -149,8 +215,8 @@ func (r Request) String() string {
 		fmt.Fprintf(builder, "%s\n", string(r.Body))
 	}
 
-	if r.ResponseRef != "" {
-		fmt.Fprintf(builder, "<> %s\n", r.ResponseRef)
+	if r.ResponseFile != "" {
+		fmt.Fprintf(builder, "> %s\n", r.ResponseFile)
 	}
 
 	return builder.String()
@@ -171,6 +237,24 @@ func (r Request) Title() string {
 // Description returns a description of the request, in this case the method and URL.
 func (r Request) Description() string {
 	return fmt.Sprintf("%s %s", r.Method, r.URL)
+}
+
+// Prompt represents a variable that requires the user to specify by responding to a prompt.
+type Prompt struct {
+	// Name of the variable into which to store the user provided value
+	Name string `json:"name,omitempty"`
+
+	// Description of the prompt, optional
+	Description string `json:"description,omitempty"`
+}
+
+// String implements [fmt.Stringer] for a [Prompt].
+func (p Prompt) String() string {
+	if p.Description != "" {
+		return fmt.Sprintf("@prompt %s %s\n", p.Name, p.Description)
+	}
+
+	return fmt.Sprintf("@prompt %s\n", p.Name)
 }
 
 // ResolveFile converts a [syntax.File] to a [File], performing variable
@@ -204,6 +288,7 @@ func ResolveFile(in syntax.File) (File, error) {
 		if err != nil {
 			return File{}, err
 		}
+
 		globals[key] = replaced
 	}
 
@@ -236,9 +321,13 @@ func ResolveFile(in syntax.File) (File, error) {
 // resolveRequest converts a [syntax.Request] to a [Request], performing variable
 // resolution and other validation.
 func resolveRequest(in syntax.Request, globals map[string]string) (Request, error) {
+	// All stuff that needs no transformation
 	resolved := Request{
 		Name:              in.Name,
+		Comment:           in.Comment,
 		Method:            in.Method,
+		BodyFile:          in.BodyFile,
+		ResponseFile:      in.ResponseFile,
 		Timeout:           in.Timeout,
 		ConnectionTimeout: in.ConnectionTimeout,
 		NoRedirect:        in.NoRedirect,
@@ -269,10 +358,18 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 		if err != nil {
 			return Request{}, err
 		}
+
 		vars[key] = replaced
 	}
 
 	resolved.Vars = vars
+
+	prompts := make([]Prompt, 0, len(in.Prompts))
+	for _, prompt := range in.Prompts {
+		prompts = append(prompts, Prompt{Name: prompt.Name, Description: prompt.Description})
+	}
+
+	resolved.Prompts = prompts
 
 	headers := make(map[string]string, len(in.Headers))
 	for key, value := range in.Headers {
@@ -280,6 +377,7 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 		if err != nil {
 			return Request{}, err
 		}
+
 		headers[key] = replaced
 	}
 
@@ -291,6 +389,7 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 	if err != nil {
 		return Request{}, err
 	}
+
 	_, err = url.ParseRequestURI(replacedURL)
 	if err != nil {
 		return Request{}, fmt.Errorf("invalid URL for request %s: %w", in.Name, err)
@@ -322,6 +421,7 @@ func Equal(a, b File) bool {
 	switch {
 	case a.Name != b.Name,
 		!maps.Equal(a.Vars, b.Vars),
+		!slices.Equal(a.Prompts, b.Prompts),
 		!slices.EqualFunc(a.Requests, b.Requests, requestEqual),
 		a.Timeout != b.Timeout,
 		a.ConnectionTimeout != b.ConnectionTimeout,
@@ -337,12 +437,14 @@ func requestEqual(a, b Request) bool {
 	switch {
 	case !maps.Equal(a.Vars, b.Vars),
 		!maps.Equal(a.Headers, b.Headers),
+		!slices.Equal(a.Prompts, b.Prompts),
 		a.Name != b.Name,
+		a.Comment != b.Comment,
 		a.Method != b.Method,
 		a.URL != b.URL,
 		a.HTTPVersion != b.HTTPVersion,
 		a.BodyFile != b.BodyFile,
-		a.ResponseRef != b.ResponseRef,
+		a.ResponseFile != b.ResponseFile,
 		!bytes.Equal(a.Body, b.Body),
 		a.Timeout != b.Timeout,
 		a.ConnectionTimeout != b.ConnectionTimeout,
@@ -361,6 +463,7 @@ func replaceAndValidate(replacer *strings.Replacer, in string) (out string, err 
 	interpEnd := strings.Index(replaced, "}}")
 
 	const cutoff = 15
+
 	end := min(interpStart+cutoff, len(replaced)-1)
 
 	if interpStart != -1 {

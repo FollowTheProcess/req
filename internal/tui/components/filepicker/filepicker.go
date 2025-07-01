@@ -116,6 +116,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
+
 	m.fp, cmd = m.fp.Update(msg)
 
 	// Did the user select a disabled file?
@@ -124,6 +125,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Let's clear the selectedFile and display an error.
 		m.err = errors.New(path + " is not valid.")
 		m.selected = ""
+
 		return m, tea.Batch(cmd, clearErrorAfter(errorClearAfter))
 	}
 
@@ -132,6 +134,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Get the path of the selected file.
 		m.selected = path
 		m.quitting = true
+
 		return m, tea.Quit
 	}
 
@@ -146,6 +149,7 @@ func (m Model) View() string {
 
 	var s strings.Builder
 	s.WriteByte('\n')
+
 	switch {
 	case m.err != nil:
 		s.WriteString(m.fp.Styles.DisabledFile.Render(m.err.Error()))
@@ -160,5 +164,6 @@ func (m Model) View() string {
 
 	helpView := m.help.View(m.keys)
 	s.WriteString(helpView)
+
 	return s.String()
 }
