@@ -19,4 +19,4 @@ jobs:
       contents: read
     uses: FollowTheProcess/ci/.github/workflows/Go.yml@v3
     with:
-      lint-tool: staticcheck
+      linter: staticcheck
