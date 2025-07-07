@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
-	github.com/charmbracelet/bubbletea v1.3.5
+	github.com/charmbracelet/bubbletea v1.3.6
 	go.followtheprocess.codes/cli v0.14.0
 	go.followtheprocess.codes/hue v0.6.0
 	go.followtheprocess.codes/log v0.3.0
