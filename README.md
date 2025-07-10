@@ -92,7 +92,7 @@ closest things available are:
 - [JetBrains Syntax Guide]
 - The [VSCode REST Extension]
 
-And careful inspection of them reveals a number of discrepencies and inconsistencies between them. As a result, knowing which features/syntax to support for this project
+And careful inspection of them reveals a number of discrepancies and inconsistencies between them. As a result, knowing which features/syntax to support for this project
 was... tricky. So this project is a best effort to support the syntax and features that I thought was most reasonable and achievable in a standalone command line tool
 not built into an IDE.
 

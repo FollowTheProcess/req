@@ -72,8 +72,8 @@ tasks:
     sources:
       - "**/*.go"
     preconditions:
-      - sh: command -v staticcheck
-        msg: staticcheck not installed, see https://staticcheck.dev/docs/getting-started/
+      - sh: command -v golangci-lint
+        msg: golangci-lint not installed, run `brew install golangci-lint`
 
       - sh: command -v typos
         msg: requires typos-cli, run `brew install typos-cli`
@@ -81,7 +81,7 @@ tasks:
       - sh: command -v nilaway
         msg: requires nilaway, see https://github.com/uber-go/nilaway
     cmds:
-      - staticcheck -checks all ./...
+      - golangci-lint run
       - typos
       - nilaway ./...
 
