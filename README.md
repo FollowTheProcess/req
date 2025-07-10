@@ -24,8 +24,9 @@ Execute `.http` files from the command line
 // Global variables (e.g. base url) can be defined with '@ident = <value>'
 @base = https://api.company.com
 
-// 3 '#' in a row mark a new HTTP request, with an optional name e.g. 'Delete employee 1'
-### [name]
+// 3 '#' in a row mark a new HTTP request, with an optional comment e.g. "Deletes employee 1"
+// This comment is effectively the description of the request
+### [comment]
 HTTP_METHOD <url>
 Header-Name: <header value>
 
@@ -40,22 +41,17 @@ HTTP_METHOD <url>
 
 // Global variables are interpolated like this
 ### Get employee 1
-GET {{base}}/employees/1
+GET {{ base }}/employees/1
 
 // Pass the body of requests like this
 ### Update employee 1 name
-PATCH {{base}}/employees/1
+PATCH {{ base }}/employees/1
 Content-Type: application/json
 
 {
   "name": "Namey McNamerson"
 }
 ```
-
-See the [Spec] and [Syntax Guide] for more info.
-
-> [!NOTE]
-> The custom javascript portions (e.g. the `{% ... %}` blocks) of the spec are **not** implemented as these are editor specific and require a javascript runtime.
 
 ## Installation
 
@@ -67,45 +63,98 @@ brew install --cask FollowTheProcess/tap/req
 
 ## Quickstart
 
-Given a `.http` file containing http requests like this:
+Given a `.http` file containing 1 or more http requests like this:
 
 ```plaintext
 // demo.http
 
-@base = https://localhost:5167
- 
-### Create a new item
-POST {{base}}/todoitems
-Content-Type: application/json
- 
-{
-  "id": "{{ $guid }}",
-  "name":"walk dog",
-  "isComplete":false
-}
- 
-### Get All items
-GET {{base}}/todoitems
- 
-### Update item
-PUT {{base}}/todoitems/1
-Content-Type: application/json
- 
-{
-  "id": 1,
-  "name":"walk dog",
-  "isComplete": true
-}
- 
-### Delete item
-DELETE {{base}}/todoitems/1
+@base = https://jsonplaceholder.typicode.com
+
+### Simple demo request
+# @name Demo
+GET {{ base }}/todos/1
+Accept: application/json
 ```
 
 You can invoke any one of them, like this...
 
 ```shell
-req do ./demo.http --request "Get All items"
+# req do [file] [request name]
+req do ./demo.http Demo
 ```
+
+### Compatibility
+
+While there is a strict specification for the format of pure HTTP requests ([RFC9110]). There is little/no formal specification for the evolution of the format used in this project, the
+closest things available are:
+
+- The [JetBrains HTTP Request in Editor Spec]
+- [JetBrains Syntax Guide]
+- The [VSCode REST Extension]
+
+And careful inspection of them reveals a number of discrepancies and inconsistencies between them. As a result, knowing which features/syntax to support for this project
+was... tricky. So this project is a best effort to support the syntax and features that I thought was most reasonable and achievable in a standalone command line tool
+not built into an IDE.
+
+Some of the more prominent differences are:
+
+#### Whitespace
+
+The [JetBrains HTTP Request in Editor Spec] specifies exact whitespace requirements between different sections e.g. a single `\n` character *must* follow a request line.
+
+See <https://github.com/JetBrains/http-request-in-editor-spec/blob/master/spec.md#23-whitespaces>
+
+This project makes no such requirement, whitespace is entirely ignored meaning the formatting of `.http` files is up to convention and/or automatic formatting tools
+
+#### Response Handlers
+
+The [JetBrains HTTP Request in Editor Spec] allows for custom JavaScript [Response Handlers](https://github.com/JetBrains/http-request-in-editor-spec/blob/master/spec.md#324-response-handler) (e.g. the `{% ... %}` blocks), that take the response and transform it in some way:
+
+```plaintext
+GET http://example.com/auth
+
+> {% client.global.set("auth", response.body.token);%}
+```
+
+This is not supported in `req` as it relies on editor-specific context and requires a JavaScript runtime.
+
+However, the version of this syntax where you dump the response body to a file *is* supported!
+
+```plaintext
+GET http://example.com/auth
+
+> ./response.json
+```
+
+#### Response Reference
+
+The [JetBrains HTTP Request in Editor Spec] allows for a [Response Reference](https://github.com/JetBrains/http-request-in-editor-spec/blob/master/spec.md#325-response-reference), but doesn't actually
+explain what that is or what should be done with it? So I've left it out for now 🤷🏻
+
+```plaintext
+GET http://example.com
+
+<> previous-response.200.json
+```
+
+> [!NOTE]
+> I can foresee a potential use for this syntax: Saving the first response to the filepath indicated and then the next time it runs, comparing the responses and generating a diff of the previous response vs the current one. This isn't
+> implemented yet but it's in the back of my mind for the future 👀
+
+#### Templating Syntax
+
+All the mentioned specs allow for some sort of templating inside the `.http` files e.g. declaring a base URL globally, then interpolating it in all request URLs
+
+The implementations designed to run in IDEs likely leverage the native templating capability of the host language (Kotlin in JetBrains' case and JavaScript for VSCode). This presents me an issue, as `req` is written in Go, the native
+templating syntax is a little different.
+
+Instead of `{{ base }}`, Go's templating requires a `.` for attribute access and templated variables to be exported so the direct equivalent would be `{{ .Base }}`. Likewise function calls like `{{ $random.uuid }}` would be something like `{{ .Random.UUID }}`
+
+I've chosen to use Go's native templating syntax *for now* to get this project off the ground and ensure it's got all the features I want it to have. However, swapping out the limited templating available to `.http` files to a custom
+implementation so that `req` may execute `.http` files compatible with both JetBrains IDEs and the VSCode REST Extension is *definitely* on my roadmap!
+
+> [!WARNING]
+> Until this is done, HTTP request files written for `req` will sadly not be compatible with other IDE based tools
 
 ### Credits
 
@@ -115,5 +164,7 @@ This package was created with [copier] and the [FollowTheProcess/go_copier] proj
 [FollowTheProcess/go_copier]: https://github.com/FollowTheProcess/go_copier
 [GitHub release]: https://github.com/FollowTheProcess/req/releases
 [homebrew]: https://brew.sh
-[Spec]: https://github.com/JetBrains/http-request-in-editor-spec
-[Syntax Guide]: https://www.jetbrains.com/help/idea/exploring-http-syntax.html
+[JetBrains Syntax Guide]: https://www.jetbrains.com/help/idea/exploring-http-syntax.html
+[RFC9110]: https://www.rfc-editor.org/rfc/rfc9110.html
+[JetBrains HTTP Request in Editor Spec]: https://github.com/JetBrains/http-request-in-editor-spec
+[VSCode REST Extension]: https://github.com/Huachao/vscode-restclient
