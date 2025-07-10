@@ -276,7 +276,7 @@ func ResolveFile(in syntax.File) (File, error) {
 	oldnew := make([]string, 0, len(in.Vars))
 	for key, value := range in.Vars {
 		// e.g. strings.NewReplace("{{base}}", "https://api.com")
-		oldnew = append(oldnew, fmt.Sprintf("{{%s}}", key))
+		oldnew = append(oldnew, fmt.Sprintf("{{.%s}}", key))
 		oldnew = append(oldnew, value)
 	}
 
@@ -352,13 +352,13 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 	// could be used in request variables
 	oldnew := make([]string, 0, len(in.Vars)+len(globals))
 	for key, value := range in.Vars {
-		// e.g. strings.NewReplace("{{request_var}}", "something")
-		oldnew = append(oldnew, fmt.Sprintf("{{%s}}", key))
+		// e.g. strings.NewReplace("{{.request_var}}", "something")
+		oldnew = append(oldnew, fmt.Sprintf("{{.%s}}", key))
 		oldnew = append(oldnew, value)
 	}
 
 	for key, value := range globals {
-		oldnew = append(oldnew, fmt.Sprintf("{{%s}}", key))
+		oldnew = append(oldnew, fmt.Sprintf("{{.%s}}", key))
 		oldnew = append(oldnew, value)
 	}
 

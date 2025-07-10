@@ -82,7 +82,7 @@ func TestResolve(t *testing.T) {
 				Name: "globals",
 				Vars: map[string]string{
 					"base": "https://api.com/v1",
-					"auth": "{{base}}/auth",
+					"auth": "{{.base}}/auth",
 				},
 			},
 			want: spec.File{
@@ -103,13 +103,13 @@ func TestResolve(t *testing.T) {
 				Name: "globals",
 				Vars: map[string]string{
 					"base":  "https://api.com/v1",
-					"auth":  "{{base}}/auth",
-					"wrong": "{{missing}}/variable",
+					"auth":  "{{.base}}/auth",
+					"wrong": "{{.missing}}/variable",
 				},
 			},
 			want:    spec.File{},
 			wantErr: true,
-			errMsg:  `use of undeclared variable "{{missing}}" in interpolation`,
+			errMsg:  `use of undeclared variable "{{.missing}}" in interpolation`,
 		},
 		{
 			name: "globals with unterminated interpolation",
@@ -117,12 +117,12 @@ func TestResolve(t *testing.T) {
 				Name: "globals",
 				Vars: map[string]string{
 					"base": "https://api.com/v1",
-					"auth": "{{base/auth",
+					"auth": "{{.base/auth",
 				},
 			},
 			want:    spec.File{},
 			wantErr: true,
-			errMsg:  `unterminated variable interpolation: "{{base/aut"`,
+			errMsg:  `unterminated variable interpolation: "{{.base/aut"`,
 		},
 		{
 			name: "single request",
@@ -173,15 +173,12 @@ func TestResolve(t *testing.T) {
 					{
 						Headers: map[string]string{
 							"Content-Type": "application/json",
-							"X-User-ID":    "{{user_id}}",
-						},
-						Vars: map[string]string{
-							"something": "{{user_id}}",
+							"X-User-ID":    "{{.user_id}}",
 						},
 						Name:   "#1",
 						Method: "POST",
-						URL:    "{{base}}/items/1",
-						Body:   []byte(`{"message": "here", "user": "{{user_id}}"}`),
+						URL:    "{{.base}}/items/1",
+						Body:   []byte(`{"message": "here", "user": "{{.user_id}}"}`),
 					},
 				},
 			},
@@ -196,9 +193,6 @@ func TestResolve(t *testing.T) {
 						Headers: map[string]string{
 							"Content-Type": "application/json",
 							"X-User-ID":    "123",
-						},
-						Vars: map[string]string{
-							"something": "123",
 						},
 						Name:              "#1",
 						Method:            "POST",
@@ -218,43 +212,27 @@ func TestResolve(t *testing.T) {
 			name: "single request with prompt",
 			in: syntax.File{
 				Name: "test.http",
-				Vars: map[string]string{
-					"base":    "https://api.com",
-					"user_id": "123",
-				},
 				Requests: []syntax.Request{
 					{
 						Headers: map[string]string{
 							"Content-Type": "application/json",
-							"X-User-ID":    "{{user_id}}",
-						},
-						Vars: map[string]string{
-							"something": "{{user_id}}",
 						},
 						Prompts: []syntax.Prompt{
 							{Name: "value", Description: "Give me a value"},
 						},
 						Name:   "#1",
 						Method: "POST",
-						URL:    "{{base}}/items/1",
-						Body:   []byte(`{"message": "here", "user": "{{user_id}}"}`),
+						URL:    "https://api.com/items/1",
+						Body:   []byte(`{"message": "here", "user": 123}`),
 					},
 				},
 			},
 			want: spec.File{
 				Name: "test.http",
-				Vars: map[string]string{
-					"base":    "https://api.com",
-					"user_id": "123",
-				},
 				Requests: []spec.Request{
 					{
 						Headers: map[string]string{
 							"Content-Type": "application/json",
-							"X-User-ID":    "123",
-						},
-						Vars: map[string]string{
-							"something": "123",
 						},
 						Prompts: []spec.Prompt{
 							{Name: "value", Description: "Give me a value"},
@@ -262,7 +240,7 @@ func TestResolve(t *testing.T) {
 						Name:              "#1",
 						Method:            "POST",
 						URL:               "https://api.com/items/1",
-						Body:              []byte(`{"message": "here", "user": "123"}`),
+						Body:              []byte(`{"message": "here", "user": 123}`),
 						Timeout:           spec.DefaultTimeout,
 						ConnectionTimeout: spec.DefaultConnectionTimeout,
 					},
