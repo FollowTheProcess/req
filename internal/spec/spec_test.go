@@ -58,6 +58,25 @@ func TestResolve(t *testing.T) {
 			errMsg:  "",
 		},
 		{
+			name: "global prompts",
+			in: syntax.File{
+				Name: "globals",
+				Prompts: []syntax.Prompt{
+					{Name: "value", Description: "Give me a value"},
+				},
+			},
+			want: spec.File{
+				Name: "globals",
+				Prompts: []spec.Prompt{
+					{Name: "value", Description: "Give me a value"},
+				},
+				Timeout:           spec.DefaultTimeout,
+				ConnectionTimeout: spec.DefaultConnectionTimeout,
+			},
+			wantErr: false,
+			errMsg:  "",
+		},
+		{
 			name: "globals with interpolation",
 			in: syntax.File{
 				Name: "globals",
@@ -180,6 +199,65 @@ func TestResolve(t *testing.T) {
 						},
 						Vars: map[string]string{
 							"something": "123",
+						},
+						Name:              "#1",
+						Method:            "POST",
+						URL:               "https://api.com/items/1",
+						Body:              []byte(`{"message": "here", "user": "123"}`),
+						Timeout:           spec.DefaultTimeout,
+						ConnectionTimeout: spec.DefaultConnectionTimeout,
+					},
+				},
+				Timeout:           spec.DefaultTimeout,
+				ConnectionTimeout: spec.DefaultConnectionTimeout,
+			},
+			wantErr: false,
+			errMsg:  "",
+		},
+		{
+			name: "single request with prompt",
+			in: syntax.File{
+				Name: "test.http",
+				Vars: map[string]string{
+					"base":    "https://api.com",
+					"user_id": "123",
+				},
+				Requests: []syntax.Request{
+					{
+						Headers: map[string]string{
+							"Content-Type": "application/json",
+							"X-User-ID":    "{{user_id}}",
+						},
+						Vars: map[string]string{
+							"something": "{{user_id}}",
+						},
+						Prompts: []syntax.Prompt{
+							{Name: "value", Description: "Give me a value"},
+						},
+						Name:   "#1",
+						Method: "POST",
+						URL:    "{{base}}/items/1",
+						Body:   []byte(`{"message": "here", "user": "{{user_id}}"}`),
+					},
+				},
+			},
+			want: spec.File{
+				Name: "test.http",
+				Vars: map[string]string{
+					"base":    "https://api.com",
+					"user_id": "123",
+				},
+				Requests: []spec.Request{
+					{
+						Headers: map[string]string{
+							"Content-Type": "application/json",
+							"X-User-ID":    "123",
+						},
+						Vars: map[string]string{
+							"something": "123",
+						},
+						Prompts: []spec.Prompt{
+							{Name: "value", Description: "Give me a value"},
 						},
 						Name:              "#1",
 						Method:            "POST",

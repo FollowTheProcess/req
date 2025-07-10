@@ -265,6 +265,7 @@ func ResolveFile(in syntax.File) (File, error) {
 		Timeout:           in.Timeout,
 		ConnectionTimeout: in.ConnectionTimeout,
 		NoRedirect:        in.NoRedirect,
+		Prompts:           resolvePrompts(in.Prompts),
 	}
 
 	// Note: We could use something like text/template but I wanted to try and be compatible with
@@ -318,6 +319,16 @@ func ResolveFile(in syntax.File) (File, error) {
 	return resolved, nil
 }
 
+// resolvePrompts converts a []syntax.Prompt to a []Prompt.
+func resolvePrompts(in []syntax.Prompt) []Prompt {
+	resolved := make([]Prompt, 0, len(in))
+	for _, prompt := range in {
+		resolved = append(resolved, Prompt{Name: prompt.Name, Description: prompt.Description})
+	}
+
+	return resolved
+}
+
 // resolveRequest converts a [syntax.Request] to a [Request], performing variable
 // resolution and other validation.
 func resolveRequest(in syntax.Request, globals map[string]string) (Request, error) {
@@ -325,6 +336,7 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 	resolved := Request{
 		Name:              in.Name,
 		Comment:           in.Comment,
+		Prompts:           resolvePrompts(in.Prompts),
 		Method:            in.Method,
 		BodyFile:          in.BodyFile,
 		ResponseFile:      in.ResponseFile,
@@ -363,13 +375,6 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 	}
 
 	resolved.Vars = vars
-
-	prompts := make([]Prompt, 0, len(in.Prompts))
-	for _, prompt := range in.Prompts {
-		prompts = append(prompts, Prompt{Name: prompt.Name, Description: prompt.Description})
-	}
-
-	resolved.Prompts = prompts
 
 	headers := make(map[string]string, len(in.Headers))
 	for key, value := range in.Headers {
