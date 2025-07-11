@@ -114,18 +114,20 @@ func TestResolve(t *testing.T) {
 			errMsg:  "",
 		},
 		{
-			name: "single request using globals",
+			name: "single request using variables",
 			in: syntax.File{
 				Name: "test.http",
 				Vars: map[string]string{
-					"base":    "https://api.com",
-					"user_id": "123",
+					"base": "https://api.com",
 				},
 				Requests: []syntax.Request{
 					{
 						Headers: map[string]string{
 							"Content-Type": "application/json",
 							"X-User-ID":    "{{.user_id}}",
+						},
+						Vars: map[string]string{
+							"user_id": "123",
 						},
 						Name:   "#1",
 						Method: "POST",
@@ -137,8 +139,7 @@ func TestResolve(t *testing.T) {
 			want: spec.File{
 				Name: "test.http",
 				Vars: map[string]string{
-					"base":    "https://api.com",
-					"user_id": "123",
+					"base": "https://api.com",
 				},
 				Requests: []spec.Request{
 					{
@@ -276,6 +277,15 @@ func TestFormat(t *testing.T) {
 			},
 		},
 		{
+			name: "global prompts",
+			file: spec.File{
+				Name: "PromptMe",
+				Prompts: []spec.Prompt{
+					{Name: "value", Description: "Give me a value!"},
+				},
+			},
+		},
+		{
 			name: "with simple request",
 			file: spec.File{
 				Name: "Requests",
@@ -284,9 +294,48 @@ func TestFormat(t *testing.T) {
 				},
 				Requests: []spec.Request{
 					{
-						Name:   "A simple request",
-						Method: http.MethodGet,
-						URL:    "https://api.com/v1/items/123",
+						Name:    "GetItem",
+						Comment: "A simple request",
+						Method:  http.MethodGet,
+						URL:     "https://api.com/v1/items/123",
+					},
+				},
+			},
+		},
+		{
+			name: "request with variables",
+			file: spec.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []spec.Request{
+					{
+						Name: "GetItem",
+						Vars: map[string]string{
+							"test": "yes",
+						},
+						Comment: "A simple request",
+						Method:  http.MethodGet,
+						URL:     "https://api.com/v1/items/123",
+					},
+				},
+			},
+		},
+		{
+			name: "with http version",
+			file: spec.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []spec.Request{
+					{
+						Name:        "GetItem",
+						Comment:     "A simple request",
+						Method:      http.MethodGet,
+						HTTPVersion: "HTTP/1.2",
+						URL:         "https://api.com/v1/items/123",
 					},
 				},
 			},
@@ -375,6 +424,26 @@ func TestFormat(t *testing.T) {
 				Requests: []spec.Request{
 					{
 						Name:         "Another Request",
+						Method:       http.MethodPost,
+						URL:          "https://api.com/v1/items/123",
+						ResponseFile: "./response.json",
+					},
+				},
+			},
+		},
+		{
+			name: "request with prompt",
+			file: spec.File{
+				Name: "Requests",
+				Vars: map[string]string{
+					"base": "https://api.com/v1",
+				},
+				Requests: []spec.Request{
+					{
+						Name: "Another",
+						Prompts: []spec.Prompt{
+							{Name: "value", Description: "Give me a value!"},
+						},
 						Method:       http.MethodPost,
 						URL:          "https://api.com/v1/items/123",
 						ResponseFile: "./response.json",

@@ -4,4 +4,5 @@
 
 ### A simple request
 # @name = GetItem
+# @test = yes
 GET https://api.com/v1/items/123
