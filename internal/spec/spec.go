@@ -275,7 +275,7 @@ func ResolveFile(in syntax.File) (File, error) {
 	// but this is fine for now
 	oldnew := make([]string, 0, len(in.Vars))
 	for key, value := range in.Vars {
-		// e.g. strings.NewReplace("{{base}}", "https://api.com")
+		// e.g. strings.NewReplacer("{{.base}}", "https://api.com")
 		oldnew = append(oldnew, fmt.Sprintf("{{.%s}}", key))
 		oldnew = append(oldnew, value)
 	}

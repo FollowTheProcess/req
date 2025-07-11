@@ -2,5 +2,5 @@
 
 ### Simple demo request
 # @name Demo
-GET {{base}}/todos/1
+GET {{.base}}/todos/1
 Accept: application/json
