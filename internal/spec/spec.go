@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"slices"
 	"strings"
+	"text/template"
 	"time"
 
 	"go.followtheprocess.codes/req/internal/syntax"
@@ -268,36 +269,16 @@ func ResolveFile(in syntax.File) (File, error) {
 		Prompts:           resolvePrompts(in.Prompts),
 	}
 
-	// Note: We could use something like text/template but I wanted to try and be compatible with
-	// things like the VSCode rest extension which uses {{something}} syntax as opposed to Go's {{.Something}}
-
-	// TODO(@FollowTheProcess): I think we might need to do something else when it comes to things like {{ $random.uuid }}
-	// but this is fine for now
-	oldnew := make([]string, 0, len(in.Vars))
-	for key, value := range in.Vars {
-		// e.g. strings.NewReplace("{{base}}", "https://api.com")
-		oldnew = append(oldnew, fmt.Sprintf("{{%s}}", key))
-		oldnew = append(oldnew, value)
-	}
-
-	replacer := strings.NewReplacer(oldnew...)
-
-	globals := make(map[string]string, len(in.Vars))
-
-	for key, value := range in.Vars {
-		replaced, err := replaceAndValidate(replacer, value)
-		if err != nil {
-			return File{}, err
-		}
-
-		globals[key] = replaced
-	}
-
-	resolved.Vars = globals
+	// Currently, this works because we don't actually allow template tags in the values of
+	// global variables at a syntax level, so we *know* that they are all fully resolved
+	// already. This is something I'd like to look at but would involve variable resolution
+	// in order so that a variable defined on line 1 can be used in another defined on line 2
+	// but not vice versa
+	resolved.Vars = in.Vars
 
 	resolvedRequests := make([]Request, 0, len(in.Requests))
 	for _, request := range in.Requests {
-		resolved, err := resolveRequest(request, globals)
+		resolved, err := resolveRequest(request, in.Vars)
 		if err != nil {
 			return File{}, fmt.Errorf("could not resolve request %s: %w", request.Name, err)
 		}
@@ -345,69 +326,81 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 		NoRedirect:        in.NoRedirect,
 	}
 
-	// TODO(@FollowTheProcess): I think we should actually scan interpolation tokens in the scanner
-	// and parse them "properly"
+	buf := &bytes.Buffer{}
 
-	// Replace local request scoped vars but also globals because global variables
-	// could be used in request variables
-	oldnew := make([]string, 0, len(in.Vars)+len(globals))
+	allVars := make(map[string]string, len(in.Vars)+len(globals))
+	maps.Copy(allVars, globals)
+
 	for key, value := range in.Vars {
-		// e.g. strings.NewReplace("{{request_var}}", "something")
-		oldnew = append(oldnew, fmt.Sprintf("{{%s}}", key))
-		oldnew = append(oldnew, value)
-	}
-
-	for key, value := range globals {
-		oldnew = append(oldnew, fmt.Sprintf("{{%s}}", key))
-		oldnew = append(oldnew, value)
-	}
-
-	replacer := strings.NewReplacer(oldnew...)
-
-	vars := make(map[string]string, len(in.Vars))
-	for key, value := range in.Vars {
-		replaced, err := replaceAndValidate(replacer, value)
+		name := fmt.Sprintf("Request %s/Var %s", in.Name, key)
+		tmp, err := template.New(name).Option("missingkey=error").Parse(value)
 		if err != nil {
-			return Request{}, err
+			return Request{}, fmt.Errorf("invalid template syntax in var %s: %w", key, err)
+		}
+		if err = tmp.Execute(buf, allVars); err != nil {
+			return Request{}, fmt.Errorf("failed to execute request variable templating for request %s: %w", in.Name, err)
 		}
 
-		vars[key] = replaced
+		allVars[key] = buf.String()
+
+		// Clear the buffer for the next iteration
+		buf.Reset()
 	}
 
-	resolved.Vars = vars
+	// TODO(@FollowTheProcess): This has a side effect of inlining all global variables into every request
+	// which shows up when running `show <file> --resolve`. We probably don't want that, but this works for now
+	resolved.Vars = allVars
 
-	headers := make(map[string]string, len(in.Headers))
+	// Might as well reuse the same buffer
+	buf.Reset()
+	resolvedHeaders := make(map[string]string, len(in.Headers))
+
 	for key, value := range in.Headers {
-		replaced, err := replaceAndValidate(replacer, value)
+		name := fmt.Sprintf("Request %s/Header %s", in.Name, key)
+		tmp, err := template.New(name).Option("missingkey=error").Parse(value)
 		if err != nil {
-			return Request{}, err
+			return Request{}, fmt.Errorf("invalid template syntax in header %s: %w", key, err)
+		}
+		if err = tmp.Execute(buf, allVars); err != nil {
+			return Request{}, fmt.Errorf("failed to execute request header templating for request %s: %w", in.Name, err)
 		}
 
-		headers[key] = replaced
+		resolvedHeaders[key] = buf.String()
+		buf.Reset()
 	}
 
-	resolved.Headers = headers
+	resolved.Headers = resolvedHeaders
 
-	// Global vars may be used in request URL, and we can now strictly validate it
-	// as it should be absolute
-	replacedURL, err := replaceAndValidate(replacer, in.URL)
+	// Now for the URL
+	buf.Reset()
+	tmp, err := template.New(fmt.Sprintf("Request %s/URL", in.Name)).Option("missingkey=error").Parse(in.URL)
 	if err != nil {
-		return Request{}, err
+		return Request{}, fmt.Errorf("invalid template syntax in URL %s: %w", in.URL, err)
+	}
+	if err = tmp.Execute(buf, allVars); err != nil {
+		return Request{}, fmt.Errorf("failed to execute URL templating for request %s: %w", in.Name, err)
 	}
 
-	_, err = url.ParseRequestURI(replacedURL)
+	// Now URL templates have been resolved, it must be a valid URL
+	resolvedURL := buf.String()
+	_, err = url.ParseRequestURI(resolvedURL)
 	if err != nil {
 		return Request{}, fmt.Errorf("invalid URL for request %s: %w", in.Name, err)
 	}
 
-	resolved.URL = replacedURL
+	resolved.URL = resolvedURL
 
-	replacedBody, err := replaceAndValidate(replacer, string(in.Body))
+	// Lastly, the body
+	buf.Reset()
+	tmp, err = template.New(fmt.Sprintf("Request %s/Body", in.Name)).Option("missingkey=error").Parse(string(in.Body))
 	if err != nil {
-		return Request{}, err
+		return Request{}, fmt.Errorf("invalid template syntax in request %s body: %w", in.Name, err)
+	}
+	if err = tmp.Execute(buf, allVars); err != nil {
+		return Request{}, fmt.Errorf("failed to execute templating for request %s body: %w", in.Name, err)
 	}
 
-	resolved.Body = []byte(replacedBody)
+	resolved.Body = buf.Bytes()
 
 	// Ensure we have sensible default timeouts if none were set
 	if resolved.Timeout == 0 {
@@ -458,35 +451,4 @@ func requestEqual(a, b Request) bool {
 	default:
 		return true
 	}
-}
-
-// replaceAndValidate performs string variable replacement using the passed in replacer
-// and ensures there are no template tags remaining.
-func replaceAndValidate(replacer *strings.Replacer, in string) (out string, err error) {
-	replaced := replacer.Replace(in)
-	interpStart := strings.Index(replaced, "{{")
-	interpEnd := strings.Index(replaced, "}}")
-
-	const cutoff = 15
-
-	end := min(interpStart+cutoff, len(replaced)-1)
-
-	if interpStart != -1 {
-		// There are template tags remaining
-		if interpEnd == -1 {
-			// Unterminated
-			return "", fmt.Errorf(
-				"unterminated variable interpolation: %q",
-				replaced[interpStart:end],
-			)
-		}
-
-		// Undeclared variable
-		return "", fmt.Errorf(
-			"use of undeclared variable %q in interpolation",
-			replaced[interpStart:interpEnd+2],
-		)
-	}
-
-	return replaced, nil
 }
