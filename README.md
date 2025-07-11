@@ -83,14 +83,14 @@ You can invoke any one of them, like this...
 req do ./demo.http Demo
 ```
 
-### Compatibility
+## Compatibility
 
 While there is a strict specification for the format of pure HTTP requests ([RFC9110]). There is little/no formal specification for the evolution of the format used in this project, the
 closest things available are:
 
-- The [JetBrains HTTP Request in Editor Spec]
+- [JetBrains HTTP Request in Editor Spec]
 - [JetBrains Syntax Guide]
-- The [VSCode REST Extension]
+- [VSCode REST Extension]
 
 And careful inspection of them reveals a number of discrepancies and inconsistencies between them. As a result, knowing which features/syntax to support for this project
 was... tricky. So this project is a best effort to support the syntax and features that I thought was most reasonable and achievable in a standalone command line tool
@@ -98,7 +98,7 @@ not built into an IDE.
 
 Some of the more prominent differences are:
 
-#### Whitespace
+### Whitespace
 
 The [JetBrains HTTP Request in Editor Spec] specifies exact whitespace requirements between different sections e.g. a single `\n` character *must* follow a request line.
 
@@ -106,7 +106,7 @@ See <https://github.com/JetBrains/http-request-in-editor-spec/blob/master/spec.m
 
 This project makes no such requirement, whitespace is entirely ignored meaning the formatting of `.http` files is up to convention and/or automatic formatting tools
 
-#### Response Handlers
+### Response Handlers
 
 The [JetBrains HTTP Request in Editor Spec] allows for custom JavaScript [Response Handlers](https://github.com/JetBrains/http-request-in-editor-spec/blob/master/spec.md#324-response-handler) (e.g. the `{% ... %}` blocks), that take the response and transform it in some way:
 
@@ -126,7 +126,7 @@ GET http://example.com/auth
 > ./response.json
 ```
 
-#### Response Reference
+### Response Reference
 
 The [JetBrains HTTP Request in Editor Spec] allows for a [Response Reference](https://github.com/JetBrains/http-request-in-editor-spec/blob/master/spec.md#325-response-reference), but doesn't actually
 explain what that is or what should be done with it? So I've left it out for now 🤷🏻
@@ -141,7 +141,7 @@ GET http://example.com
 > I can foresee a potential use for this syntax: Saving the first response to the filepath indicated and then the next time it runs, comparing the responses and generating a diff of the previous response vs the current one. This isn't
 > implemented yet but it's in the back of my mind for the future 👀
 
-#### Templating Syntax
+### Templating Syntax
 
 All the mentioned specs allow for some sort of templating inside the `.http` files e.g. declaring a base URL globally, then interpolating it in all request URLs
 
@@ -158,10 +158,10 @@ implementation so that `req` may execute `.http` files compatible with both JetB
 
 ### Credits
 
-This package was created with [copier] and the [FollowTheProcess/go_copier] project template.
+This package was created with [copier] and the [FollowTheProcess/go-template] project template.
 
 [copier]: https://copier.readthedocs.io/en/stable/
-[FollowTheProcess/go_copier]: https://github.com/FollowTheProcess/go_copier
+[FollowTheProcess/go-template]: https://github.com/FollowTheProcess/go-template
 [GitHub release]: https://github.com/FollowTheProcess/req/releases
 [homebrew]: https://brew.sh
 [JetBrains Syntax Guide]: https://www.jetbrains.com/help/idea/exploring-http-syntax.html
