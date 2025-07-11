@@ -77,27 +77,6 @@ func TestResolve(t *testing.T) {
 			errMsg:  "",
 		},
 		{
-			name: "globals with interpolation",
-			in: syntax.File{
-				Name: "globals",
-				Vars: map[string]string{
-					"base": "https://api.com/v1",
-					"auth": "{{.base}}/auth",
-				},
-			},
-			want: spec.File{
-				Name: "globals",
-				Vars: map[string]string{
-					"base": "https://api.com/v1",
-					"auth": "https://api.com/v1/auth",
-				},
-				Timeout:           spec.DefaultTimeout,
-				ConnectionTimeout: spec.DefaultConnectionTimeout,
-			},
-			wantErr: false,
-			errMsg:  "",
-		},
-		{
 			name: "globals with undeclared variable",
 			in: syntax.File{
 				Name: "globals",
@@ -193,6 +172,10 @@ func TestResolve(t *testing.T) {
 						Headers: map[string]string{
 							"Content-Type": "application/json",
 							"X-User-ID":    "123",
+						},
+						Vars: map[string]string{
+							"base":    "https://api.com",
+							"user_id": "123",
 						},
 						Name:              "#1",
 						Method:            "POST",
