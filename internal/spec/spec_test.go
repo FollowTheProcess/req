@@ -77,33 +77,6 @@ func TestResolve(t *testing.T) {
 			errMsg:  "",
 		},
 		{
-			name: "globals with undeclared variable",
-			in: syntax.File{
-				Name: "globals",
-				Vars: map[string]string{
-					"base":  "https://api.com/v1",
-					"auth":  "{{.base}}/auth",
-					"wrong": "{{.missing}}/variable",
-				},
-			},
-			want:    spec.File{},
-			wantErr: true,
-			errMsg:  `failed to execute global variable templating: template: wrong:1:2: executing "wrong" at <.missing>: map has no entry for key "missing"`,
-		},
-		{
-			name: "globals with unterminated interpolation",
-			in: syntax.File{
-				Name: "globals",
-				Vars: map[string]string{
-					"base": "https://api.com/v1",
-					"auth": "{{.base/auth",
-				},
-			},
-			want:    spec.File{},
-			wantErr: true,
-			errMsg:  "invalid template syntax in var auth: template: auth:1: bad character U+002F '/'",
-		},
-		{
 			name: "single request",
 			in: syntax.File{
 				Name: "test.http",

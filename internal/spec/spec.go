@@ -270,35 +270,15 @@ func ResolveFile(in syntax.File) (File, error) {
 	}
 
 	// Currently, this works because we don't actually allow template tags in the values of
-	// global variables at a syntax level. If that changes (which I'd like), then we'll have to
-	// rethink how we do this as iterating over the map in random order with range won't
-	// continue to work
-
-	buf := &bytes.Buffer{}
-
-	resolvedGlobals := make(map[string]string, len(in.Vars))
-
-	for key, value := range in.Vars {
-		tmp, err := template.New(key).Option("missingkey=error").Parse(value)
-		if err != nil {
-			return File{}, fmt.Errorf("invalid template syntax in var %s: %w", key, err)
-		}
-		if err = tmp.Execute(buf, resolvedGlobals); err != nil {
-			return File{}, fmt.Errorf("failed to execute global variable templating: %w", err)
-		}
-
-		resolvedValue := buf.String()
-		resolvedGlobals[key] = resolvedValue
-
-		// Clear the buffer for the next iteration
-		buf.Reset()
-	}
-
-	resolved.Vars = resolvedGlobals
+	// global variables at a syntax level, so we *know* that they are all fully resolved
+	// already. This is something I'd like to look at but would involve variable resolution
+	// in order so that a variable defined on line 1 can be used in another defined on line 2
+	// but not vice versa
+	resolved.Vars = in.Vars
 
 	resolvedRequests := make([]Request, 0, len(in.Requests))
 	for _, request := range in.Requests {
-		resolved, err := resolveRequest(request, resolvedGlobals)
+		resolved, err := resolveRequest(request, in.Vars)
 		if err != nil {
 			return File{}, fmt.Errorf("could not resolve request %s: %w", request.Name, err)
 		}
