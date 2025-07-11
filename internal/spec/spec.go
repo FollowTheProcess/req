@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"slices"
 	"strings"
+	"text/template"
 	"time"
 
 	"go.followtheprocess.codes/req/internal/syntax"
@@ -268,36 +269,31 @@ func ResolveFile(in syntax.File) (File, error) {
 		Prompts:           resolvePrompts(in.Prompts),
 	}
 
-	// Note: We could use something like text/template but I wanted to try and be compatible with
-	// things like the VSCode rest extension which uses {{something}} syntax as opposed to Go's {{.Something}}
+	buf := &bytes.Buffer{}
 
-	// TODO(@FollowTheProcess): I think we might need to do something else when it comes to things like {{ $random.uuid }}
-	// but this is fine for now
-	oldnew := make([]string, 0, len(in.Vars))
-	for key, value := range in.Vars {
-		// e.g. strings.NewReplacer("{{.base}}", "https://api.com")
-		oldnew = append(oldnew, fmt.Sprintf("{{.%s}}", key))
-		oldnew = append(oldnew, value)
-	}
-
-	replacer := strings.NewReplacer(oldnew...)
-
-	globals := make(map[string]string, len(in.Vars))
+	resolvedGlobals := make(map[string]string, len(in.Vars))
 
 	for key, value := range in.Vars {
-		replaced, err := replaceAndValidate(replacer, value)
+		tmp, err := template.New(key).Option("missingkey=error").Parse(value)
 		if err != nil {
-			return File{}, err
+			return File{}, fmt.Errorf("invalid template syntax in var %s: %w", key, err)
+		}
+		if err = tmp.Execute(buf, resolvedGlobals); err != nil {
+			return File{}, fmt.Errorf("failed to execute global variable templating: %w", err)
 		}
 
-		globals[key] = replaced
+		resolvedValue := buf.String()
+		resolvedGlobals[key] = resolvedValue
+
+		// Clear the buffer for the next iteration
+		buf.Reset()
 	}
 
-	resolved.Vars = globals
+	resolved.Vars = resolvedGlobals
 
 	resolvedRequests := make([]Request, 0, len(in.Requests))
 	for _, request := range in.Requests {
-		resolved, err := resolveRequest(request, globals)
+		resolved, err := resolveRequest(request, resolvedGlobals)
 		if err != nil {
 			return File{}, fmt.Errorf("could not resolve request %s: %w", request.Name, err)
 		}

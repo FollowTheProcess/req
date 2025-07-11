@@ -109,7 +109,7 @@ func TestResolve(t *testing.T) {
 			},
 			want:    spec.File{},
 			wantErr: true,
-			errMsg:  `use of undeclared variable "{{.missing}}" in interpolation`,
+			errMsg:  `failed to execute global variable templating: template: wrong:1:2: executing "wrong" at <.missing>: map has no entry for key "missing"`,
 		},
 		{
 			name: "globals with unterminated interpolation",
@@ -122,7 +122,7 @@ func TestResolve(t *testing.T) {
 			},
 			want:    spec.File{},
 			wantErr: true,
-			errMsg:  `unterminated variable interpolation: "{{.base/aut"`,
+			errMsg:  "invalid template syntax in var auth: template: auth:1: bad character U+002F '/'",
 		},
 		{
 			name: "single request",
