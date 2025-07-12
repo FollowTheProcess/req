@@ -52,6 +52,9 @@ func ResolveFile(in syntax.File) (File, error) {
 		Prompts:           resolvePrompts(in.Prompts),
 	}
 
+	// TODO(@FollowTheProcess): When the prompts get answered, we need to store the answers
+	// in the global scope here, but the local scope when processing request prompts
+
 	// Currently, this works because we don't actually allow template tags in the values of
 	// global variables at a syntax level, so we *know* that they are all fully resolved
 	// already. This is something I'd like to look at but would involve variable resolution
