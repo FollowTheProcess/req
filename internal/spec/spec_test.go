@@ -219,19 +219,17 @@ func TestResolve(t *testing.T) {
 				test.Equal(t, err.Error(), tt.errMsg)
 			}
 
-			if !spec.Equal(got, tt.want) {
-				// Do a nice diff using JSON
-				gotJSON, err := json.MarshalIndent(got, "", "  ")
-				test.Ok(t, err)
+			gotJSON, err := json.MarshalIndent(got, "", "  ")
+			test.Ok(t, err)
 
-				wantJSON, err := json.MarshalIndent(tt.want, "", "  ")
-				test.Ok(t, err)
+			wantJSON, err := json.MarshalIndent(tt.want, "", "  ")
+			test.Ok(t, err)
 
-				gotJSON = append(gotJSON, '\n')
-				wantJSON = append(wantJSON, '\n')
+			// MarhalIndent does not add a final newline
+			gotJSON = append(gotJSON, '\n')
+			wantJSON = append(wantJSON, '\n')
 
-				test.DiffBytes(t, gotJSON, wantJSON)
-			}
+			test.DiffBytes(t, gotJSON, wantJSON)
 		})
 	}
 }
