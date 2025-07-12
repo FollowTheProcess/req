@@ -54,6 +54,8 @@ func ResolveFile(in syntax.File) (File, error) {
 
 	// TODO(@FollowTheProcess): When the prompts get answered, we need to store the answers
 	// in the global scope here, but the local scope when processing request prompts
+	//
+	// We haven't actually integrated prompts yet
 
 	// Currently, this works because we don't actually allow template tags in the values of
 	// global variables at a syntax level, so we *know* that they are all fully resolved
