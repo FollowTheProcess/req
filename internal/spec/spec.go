@@ -2,7 +2,7 @@
 // a .http file.
 //
 // They differ from their counterparts in the syntax package in that they are "resolved". This means:
-//   - Variable interpolation e.g. `{{base}}` has been performed
+//   - Variable interpolation e.g. `{{...}}` has been performed
 //   - Default configuration has been put in place if not provided in the raw file
 //
 // This resolution means that the requests described can be correctly made via http.
@@ -11,7 +11,6 @@ package spec
 import (
 	"bytes"
 	"fmt"
-	"maps"
 	"net/url"
 	"text/template"
 	"time"
@@ -58,11 +57,13 @@ func ResolveFile(in syntax.File) (File, error) {
 	// already. This is something I'd like to look at but would involve variable resolution
 	// in order so that a variable defined on line 1 can be used in another defined on line 2
 	// but not vice versa
+	scope := NewScope()
+	scope.Global = in.Vars
 	resolved.Vars = in.Vars
 
 	resolvedRequests := make([]Request, 0, len(in.Requests))
 	for _, request := range in.Requests {
-		resolved, err := resolveRequest(request, in.Vars)
+		resolved, err := resolveRequest(request, scope)
 		if err != nil {
 			return File{}, fmt.Errorf("could not resolve request %s: %w", request.Name, err)
 		}
@@ -96,7 +97,10 @@ func resolvePrompts(in []syntax.Prompt) []Prompt {
 
 // resolveRequest converts a [syntax.Request] to a [Request], performing variable
 // resolution and other validation.
-func resolveRequest(in syntax.Request, globals map[string]string) (Request, error) {
+//
+// Note that scope is passed by value, this is because we want local variable isolation
+// in each request, and this is a nice easy way of doing that.
+func resolveRequest(in syntax.Request, scope Scope) (Request, error) {
 	// All stuff that needs no transformation
 	resolved := Request{
 		Name:              in.Name,
@@ -112,31 +116,34 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 
 	buf := &bytes.Buffer{}
 
-	allVars := make(map[string]string, len(in.Vars)+len(globals))
-	maps.Copy(allVars, globals)
+	// No point allocating a Vars map if it has no local variables
+	if len(in.Vars) > 0 {
+		resolvedVars := make(map[string]string, len(in.Vars))
 
-	for key, value := range in.Vars {
-		name := fmt.Sprintf("Request %s/Var %s", in.Name, key)
-		tmp, err := template.New(name).Option("missingkey=error").Parse(value)
-		if err != nil {
-			return Request{}, fmt.Errorf("invalid template syntax in var %s: %w", key, err)
+		for key, value := range in.Vars {
+			name := fmt.Sprintf("Request %s/Var %s", in.Name, key)
+			tmp, err := template.New(name).Option("missingkey=error").Parse(value)
+			if err != nil {
+				return Request{}, fmt.Errorf("invalid template syntax in var %s: %w", key, err)
+			}
+			if err = tmp.Execute(buf, scope); err != nil {
+				return Request{}, fmt.Errorf("failed to execute request variable templating for request %s: %w", in.Name, err)
+			}
+
+			resolvedVars[key] = buf.String()
+
+			// Clear the buffer for the next iteration
+			buf.Reset()
 		}
-		if err = tmp.Execute(buf, allVars); err != nil {
-			return Request{}, fmt.Errorf("failed to execute request variable templating for request %s: %w", in.Name, err)
-		}
 
-		allVars[key] = buf.String()
+		// Note: Affecting the copy of scope in this function only
+		scope.Local = resolvedVars
+		resolved.Vars = resolvedVars
 
-		// Clear the buffer for the next iteration
+		// Might as well reuse the same buffer later
 		buf.Reset()
 	}
 
-	// TODO(@FollowTheProcess): This has a side effect of inlining all global variables into every request
-	// which shows up when running `show <file> --resolve`. We probably don't want that, but this works for now
-	resolved.Vars = allVars
-
-	// Might as well reuse the same buffer
-	buf.Reset()
 	resolvedHeaders := make(map[string]string, len(in.Headers))
 
 	for key, value := range in.Headers {
@@ -145,7 +152,7 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 		if err != nil {
 			return Request{}, fmt.Errorf("invalid template syntax in header %s: %w", key, err)
 		}
-		if err = tmp.Execute(buf, allVars); err != nil {
+		if err = tmp.Execute(buf, scope); err != nil {
 			return Request{}, fmt.Errorf("failed to execute request header templating for request %s: %w", in.Name, err)
 		}
 
@@ -161,7 +168,7 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 	if err != nil {
 		return Request{}, fmt.Errorf("invalid template syntax in URL %s: %w", in.URL, err)
 	}
-	if err = tmp.Execute(buf, allVars); err != nil {
+	if err = tmp.Execute(buf, scope); err != nil {
 		return Request{}, fmt.Errorf("failed to execute URL templating for request %s: %w", in.Name, err)
 	}
 
@@ -180,7 +187,7 @@ func resolveRequest(in syntax.Request, globals map[string]string) (Request, erro
 	if err != nil {
 		return Request{}, fmt.Errorf("invalid template syntax in request %s body: %w", in.Name, err)
 	}
-	if err = tmp.Execute(buf, allVars); err != nil {
+	if err = tmp.Execute(buf, scope); err != nil {
 		return Request{}, fmt.Errorf("failed to execute templating for request %s body: %w", in.Name, err)
 	}
 

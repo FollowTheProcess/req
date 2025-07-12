@@ -46,7 +46,7 @@ type Request struct {
 	// which to write the response (relative to the .http file)
 	ResponseFile string `json:"responseFile,omitempty"`
 
-	// Request body, if provided inline. Again, variable interpolation and special things like {{ $random.uuid }} have been evaluated
+	// Request body, if provided inline. Again, variable interpolation and special things like {{ .Global.base }} have been evaluated
 	Body []byte `json:"body,omitempty"`
 
 	// Request scoped timeout, overrides global if set

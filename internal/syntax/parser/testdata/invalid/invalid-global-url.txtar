@@ -2,7 +2,7 @@
 @base = https://notaurl%^&*6666----=
 
 ### Broke
-GET {{base}}£$%^&*
+GET {{.Global.base}}£$%^&*
 -- want.txt --
 invalid-global-url.txtar:1:9-37: invalid URL: parse "https://notaurl%^&*6666----=": invalid URL escape "%^&"
-invalid-global-url.txtar:4:20: invalid URL: parse "{{base}}£$%^&*": invalid URL escape "%^&"
+invalid-global-url.txtar:4:28: invalid URL: parse "{{.Global.base}}£$%^&*": invalid URL escape "%^&"

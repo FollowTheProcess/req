@@ -2,7 +2,7 @@
 @base = https://api.somewhere.com
 
 ###
-GET {{base}}/items/1
+GET {{.Global.base}}/items/1
 -- want.json --
 {
   "name": "global-url.txtar",
@@ -13,7 +13,7 @@ GET {{base}}/items/1
     {
       "name": "#1",
       "method": "GET",
-      "url": "{{base}}/items/1"
+      "url": "{{.Global.base}}/items/1"
     }
   ]
 }

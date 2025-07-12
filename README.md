@@ -41,11 +41,11 @@ HTTP_METHOD <url>
 
 // Global variables are interpolated like this
 ### Get employee 1
-GET {{ .base }}/employees/1
+GET {{ .Global.base }}/employees/1
 
 // Pass the body of requests like this
 ### Update employee 1 name
-PATCH {{ .base }}/employees/1
+PATCH {{ .Global.base }}/employees/1
 Content-Type: application/json
 
 {
@@ -72,7 +72,7 @@ Given a `.http` file containing 1 or more http requests like this:
 
 ### Simple demo request
 # @name Demo
-GET {{ .base }}/todos/1
+GET {{ .Global.base }}/todos/1
 Accept: application/json
 ```
 
@@ -148,7 +148,7 @@ All the mentioned specs allow for some sort of templating inside the `.http` fil
 The implementations designed to run in IDEs likely leverage the native templating capability of the host language (Kotlin in JetBrains' case and JavaScript for VSCode). This presents me an issue, as `req` is written in Go, the native
 templating syntax is a little different.
 
-Instead of `{{ base }}`, Go's templating requires a `.` for attribute access and templated variables to be exported so the direct equivalent would be `{{ .base }}`. Likewise function calls like `{{ $random.uuid }}` would be something like `{{ .Random.UUID }}`
+Instead of `{{ base }}`, Go's templating requires a `.` for attribute access and templated variables to be exported so the direct equivalent would be `{{ .Global.base }}`. Likewise function calls like `{{ $random.uuid }}` would be something like `{{ .Random.uuid }}`
 
 I've chosen to use Go's native templating syntax *for now* to get this project off the ground and ensure it's got all the features I want it to have. However, swapping out the limited templating available to `.http` files to a custom
 implementation so that `req` may execute `.http` files compatible with both JetBrains IDEs and the VSCode REST Extension is *definitely* on my roadmap!
