@@ -1,0 +1,28 @@
+# No variables here, just tests everything passes through okay
+
+-- raw.json --
+{
+  "name": "basic.txtar",
+  "requests": [
+    {
+      "name": "#1",
+      "method": "GET",
+      "url": "https://api.somewhere.com/items/1"
+    }
+  ]
+}
+-- resolved.json --
+{
+  "name": "basic.txtar",
+  "requests": [
+    {
+      "name": "#1",
+      "method": "GET",
+      "url": "https://api.somewhere.com/items/1",
+      "timeout": 30000000000,
+      "connectionTimeout": 10000000000
+    }
+  ],
+  "timeout": 30000000000,
+  "connectionTimeout": 10000000000
+}

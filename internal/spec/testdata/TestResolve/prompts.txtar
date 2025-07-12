@@ -1,0 +1,60 @@
+# Single request using global and local prompts
+
+-- raw.json --
+{
+  "name": "variables.txtar",
+  "vars": {
+    "base": "https://api.com/v1"
+  },
+  "requests": [
+    {
+      "vars": {
+        "user_id": "123"
+      },
+      "prompts": [
+        {
+          "name": "value",
+          "description": "Give me a value"
+        }
+      ],
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Something-Else": "yes"
+      },
+      "name": "Variables",
+      "method": "GET",
+      "url": "{{.Global.base}}/users/{{.Local.user_id}}"
+    }
+  ]
+}
+-- resolved.json --
+{
+  "name": "variables.txtar",
+  "vars": {
+    "base": "https://api.com/v1"
+  },
+  "requests": [
+    {
+      "vars": {
+        "user_id": "123"
+      },
+      "headers": {
+        "Content-Type": "application/json",
+        "X-Something-Else": "yes"
+      },
+      "prompts": [
+        {
+          "name": "value",
+          "description": "Give me a value"
+        }
+      ],
+      "name": "Variables",
+      "method": "GET",
+      "url": "https://api.com/v1/users/123",
+      "timeout": 30000000000,
+      "connectionTimeout": 10000000000
+    }
+  ],
+  "timeout": 30000000000,
+  "connectionTimeout": 10000000000
+}
