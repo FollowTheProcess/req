@@ -1,0 +1,18 @@
+# Just globals, kinda pointless but easy to test
+
+-- raw.json --
+{
+  "name": "globals.txtar",
+  "vars": {
+    "base": "https://api.com/v1"
+  }
+}
+-- resolved.json --
+{
+  "name": "globals.txtar",
+  "vars": {
+    "base": "https://api.com/v1"
+  },
+  "timeout": 30000000000,
+  "connectionTimeout": 10000000000
+}

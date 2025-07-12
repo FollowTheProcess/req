@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"net/http"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"go.followtheprocess.codes/req/internal/syntax"
 	"go.followtheprocess.codes/snapshot"
 	"go.followtheprocess.codes/test"
+	"go.followtheprocess.codes/txtar"
 )
 
 var (
@@ -19,216 +21,49 @@ var (
 )
 
 func TestResolve(t *testing.T) {
-	test.ColorEnabled(true) // Force colour in the diffs
+	test.ColorEnabled(true)
 
-	tests := []struct {
-		name    string      // Name of the test case
-		errMsg  string      // If we wanted an error, what should it say
-		in      syntax.File // Raw file in
-		want    spec.File   // Expected resolved file
-		wantErr bool        // Whether we want an error
-	}{
-		{
-			name: "empty",
-			in:   syntax.File{},
-			want: spec.File{
-				Timeout:           spec.DefaultTimeout,
-				ConnectionTimeout: spec.DefaultConnectionTimeout,
-			},
-			wantErr: false,
-			errMsg:  "",
-		},
-		{
-			name: "globals",
-			in: syntax.File{
-				Name: "globals",
-				Vars: map[string]string{
-					"base": "https://api.com/v1",
-				},
-			},
-			want: spec.File{
-				Name: "globals",
-				Vars: map[string]string{
-					"base": "https://api.com/v1",
-				},
-				Timeout:           spec.DefaultTimeout,
-				ConnectionTimeout: spec.DefaultConnectionTimeout,
-			},
-			wantErr: false,
-			errMsg:  "",
-		},
-		{
-			name: "global prompts",
-			in: syntax.File{
-				Name: "globals",
-				Prompts: []syntax.Prompt{
-					{Name: "value", Description: "Give me a value"},
-				},
-			},
-			want: spec.File{
-				Name: "globals",
-				Prompts: []spec.Prompt{
-					{Name: "value", Description: "Give me a value"},
-				},
-				Timeout:           spec.DefaultTimeout,
-				ConnectionTimeout: spec.DefaultConnectionTimeout,
-			},
-			wantErr: false,
-			errMsg:  "",
-		},
-		{
-			name: "single request",
-			in: syntax.File{
-				Name: "test.http",
-				Requests: []syntax.Request{
-					{
-						Headers: map[string]string{
-							"Content-Type": "application/json",
-						},
-						Name:   "#1",
-						Method: "POST",
-						URL:    "https://api.com/items/1",
-						Body:   []byte(`{"message": "here"}`),
-					},
-				},
-			},
-			want: spec.File{
-				Name: "test.http",
-				Requests: []spec.Request{
-					{
-						Headers: map[string]string{
-							"Content-Type": "application/json",
-						},
-						Name:              "#1",
-						Method:            "POST",
-						URL:               "https://api.com/items/1",
-						Body:              []byte(`{"message": "here"}`),
-						Timeout:           spec.DefaultTimeout,
-						ConnectionTimeout: spec.DefaultConnectionTimeout,
-					},
-				},
-				Timeout:           spec.DefaultTimeout,
-				ConnectionTimeout: spec.DefaultConnectionTimeout,
-			},
-			wantErr: false,
-			errMsg:  "",
-		},
-		{
-			name: "single request using variables",
-			in: syntax.File{
-				Name: "test.http",
-				Vars: map[string]string{
-					"base": "https://api.com",
-				},
-				Requests: []syntax.Request{
-					{
-						Headers: map[string]string{
-							"Content-Type": "application/json",
-							"X-User-ID":    "{{.Local.user_id}}",
-						},
-						Vars: map[string]string{
-							"user_id": "123",
-						},
-						Name:   "#1",
-						Method: "POST",
-						URL:    "{{.Global.base}}/items/1",
-						Body:   []byte(`{"message": "here", "user": "{{.Local.user_id}}"}`),
-					},
-				},
-			},
-			want: spec.File{
-				Name: "test.http",
-				Vars: map[string]string{
-					"base": "https://api.com",
-				},
-				Requests: []spec.Request{
-					{
-						Headers: map[string]string{
-							"Content-Type": "application/json",
-							"X-User-ID":    "123",
-						},
-						Vars: map[string]string{
-							"user_id": "123",
-						},
-						Name:              "#1",
-						Method:            "POST",
-						URL:               "https://api.com/items/1",
-						Body:              []byte(`{"message": "here", "user": "123"}`),
-						Timeout:           spec.DefaultTimeout,
-						ConnectionTimeout: spec.DefaultConnectionTimeout,
-					},
-				},
-				Timeout:           spec.DefaultTimeout,
-				ConnectionTimeout: spec.DefaultConnectionTimeout,
-			},
-			wantErr: false,
-			errMsg:  "",
-		},
-		{
-			name: "single request with prompt",
-			in: syntax.File{
-				Name: "test.http",
-				Requests: []syntax.Request{
-					{
-						Headers: map[string]string{
-							"Content-Type": "application/json",
-						},
-						Prompts: []syntax.Prompt{
-							{Name: "value", Description: "Give me a value"},
-						},
-						Name:   "#1",
-						Method: "POST",
-						URL:    "https://api.com/items/1",
-						Body:   []byte(`{"message": "here", "user": 123}`),
-					},
-				},
-			},
-			want: spec.File{
-				Name: "test.http",
-				Requests: []spec.Request{
-					{
-						Headers: map[string]string{
-							"Content-Type": "application/json",
-						},
-						Prompts: []spec.Prompt{
-							{Name: "value", Description: "Give me a value"},
-						},
-						Name:              "#1",
-						Method:            "POST",
-						URL:               "https://api.com/items/1",
-						Body:              []byte(`{"message": "here", "user": 123}`),
-						Timeout:           spec.DefaultTimeout,
-						ConnectionTimeout: spec.DefaultConnectionTimeout,
-					},
-				},
-				Timeout:           spec.DefaultTimeout,
-				ConnectionTimeout: spec.DefaultConnectionTimeout,
-			},
-			wantErr: false,
-			errMsg:  "",
-		},
-	}
+	pattern := filepath.Join("testdata", "TestResolve", "*.txtar")
+	files, err := filepath.Glob(pattern)
+	test.Ok(t, err)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := spec.ResolveFile(tt.in)
-			test.WantErr(t, err, tt.wantErr)
+	for _, file := range files {
+		name := filepath.Base(file)
+		t.Run(name, func(t *testing.T) {
+			archive, err := txtar.ParseFile(file)
+			test.Ok(t, err)
 
-			if err != nil {
-				test.Equal(t, err.Error(), tt.errMsg)
+			raw, ok := archive.Read("raw.json")
+			test.True(t, ok, test.Context("archive missing raw.json"))
+
+			want, ok := archive.Read("resolved.json")
+			test.True(t, ok, test.Context("archive missing resolved.json"))
+
+			// Unmarshal the "raw" json into a syntax.File, resolve it into a spec.File
+			// then marshal that to json and it should match "resolved"
+			var in syntax.File
+			test.Ok(t, json.Unmarshal([]byte(raw), &in))
+
+			resolved, err := spec.ResolveFile(in)
+			test.Ok(t, err)
+
+			got, err := json.MarshalIndent(resolved, "", "  ")
+			test.Ok(t, err)
+
+			// MarshalIndent does not add a newline
+			got = append(got, '\n')
+
+			if *update {
+				err := archive.Write("resolved.json", string(got))
+				test.Ok(t, err)
+
+				err = txtar.DumpFile(file, archive)
+				test.Ok(t, err)
+
+				return
 			}
 
-			gotJSON, err := json.MarshalIndent(got, "", "  ")
-			test.Ok(t, err)
-
-			wantJSON, err := json.MarshalIndent(tt.want, "", "  ")
-			test.Ok(t, err)
-
-			// MarhalIndent does not add a final newline
-			gotJSON = append(gotJSON, '\n')
-			wantJSON = append(wantJSON, '\n')
-
-			test.DiffBytes(t, gotJSON, wantJSON)
+			test.Diff(t, string(got), want)
 		})
 	}
 }
