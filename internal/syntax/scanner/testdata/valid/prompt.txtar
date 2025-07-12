@@ -1,7 +1,7 @@
 -- src.http --
 ### Get a Thing
 @prompt id The ID of a thing to get
-GET https://api.something.com/v1/thing/{{id}}
+GET https://api.something.com/v1/thing/{{.Local.id}}
 -- tokens.txt --
 <Token::Separator start=0, end=3>
 <Token::Comment start=4, end=15>
@@ -10,5 +10,5 @@ GET https://api.something.com/v1/thing/{{id}}
 <Token::Ident start=24, end=26>
 <Token::Text start=27, end=51>
 <Token::MethodGet start=52, end=55>
-<Token::URL start=56, end=97>
-<Token::EOF start=98, end=98>
+<Token::URL start=56, end=104>
+<Token::EOF start=105, end=105>

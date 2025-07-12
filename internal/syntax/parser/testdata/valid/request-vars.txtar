@@ -6,7 +6,7 @@
 // @connection-timeout = 5s
 @prompt id The ID of the user to get
 @something yes
-GET https://users.com/api/v1/items/{{id}}
+GET https://users.com/api/v1/items/{{.Local.id}}
 -- want.json --
 {
   "name": "request-vars.txtar",
@@ -24,7 +24,7 @@ GET https://users.com/api/v1/items/{{id}}
       "name": "MyRequest",
       "comment": "Lots of variables here!",
       "method": "GET",
-      "url": "https://users.com/api/v1/items/{{id}}",
+      "url": "https://users.com/api/v1/items/{{.Local.id}}",
       "timeout": 10000000000,
       "connectionTimeout": 5000000000,
       "noRedirect": true

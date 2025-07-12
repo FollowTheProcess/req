@@ -124,15 +124,15 @@ func TestResolve(t *testing.T) {
 					{
 						Headers: map[string]string{
 							"Content-Type": "application/json",
-							"X-User-ID":    "{{.user_id}}",
+							"X-User-ID":    "{{.Local.user_id}}",
 						},
 						Vars: map[string]string{
 							"user_id": "123",
 						},
 						Name:   "#1",
 						Method: "POST",
-						URL:    "{{.base}}/items/1",
-						Body:   []byte(`{"message": "here", "user": "{{.user_id}}"}`),
+						URL:    "{{.Global.base}}/items/1",
+						Body:   []byte(`{"message": "here", "user": "{{.Local.user_id}}"}`),
 					},
 				},
 			},
@@ -148,7 +148,6 @@ func TestResolve(t *testing.T) {
 							"X-User-ID":    "123",
 						},
 						Vars: map[string]string{
-							"base":    "https://api.com",
 							"user_id": "123",
 						},
 						Name:              "#1",
@@ -219,19 +218,17 @@ func TestResolve(t *testing.T) {
 				test.Equal(t, err.Error(), tt.errMsg)
 			}
 
-			if !spec.Equal(got, tt.want) {
-				// Do a nice diff using JSON
-				gotJSON, err := json.MarshalIndent(got, "", "  ")
-				test.Ok(t, err)
+			gotJSON, err := json.MarshalIndent(got, "", "  ")
+			test.Ok(t, err)
 
-				wantJSON, err := json.MarshalIndent(tt.want, "", "  ")
-				test.Ok(t, err)
+			wantJSON, err := json.MarshalIndent(tt.want, "", "  ")
+			test.Ok(t, err)
 
-				gotJSON = append(gotJSON, '\n')
-				wantJSON = append(wantJSON, '\n')
+			// MarhalIndent does not add a final newline
+			gotJSON = append(gotJSON, '\n')
+			wantJSON = append(wantJSON, '\n')
 
-				test.DiffBytes(t, gotJSON, wantJSON)
-			}
+			test.DiffBytes(t, gotJSON, wantJSON)
 		})
 	}
 }

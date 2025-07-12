@@ -2,5 +2,6 @@
 
 ### Simple demo request
 # @name Demo
-GET {{.base}}/todos/1
+# @id 1
+GET {{.Global.base}}/todos/{{.Local.id}}
 Accept: application/json
