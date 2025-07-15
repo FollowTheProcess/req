@@ -200,16 +200,7 @@ func TestBasics(t *testing.T) {
 			src := []byte(tt.src)
 			scanner := scanner.New(tt.name, src, testFailHandler(t))
 
-			var tokens []token.Token
-
-			for {
-				tok := scanner.Scan()
-
-				tokens = append(tokens, tok)
-				if tok.Is(token.EOF, token.Error) {
-					break
-				}
-			}
+			tokens := slices.Collect(scanner.All())
 
 			test.EqualFunc(t, tokens, tt.want, slices.Equal, test.Context("token stream mismatch"))
 		})
@@ -239,16 +230,7 @@ func TestValid(t *testing.T) {
 
 			scanner := scanner.New(name, []byte(src), testFailHandler(t))
 
-			var tokens []token.Token
-
-			for {
-				tok := scanner.Scan()
-
-				tokens = append(tokens, tok)
-				if tok.Is(token.EOF, token.Error) {
-					break
-				}
-			}
+			tokens := slices.Collect(scanner.All())
 
 			var formattedTokens strings.Builder
 			for _, tok := range tokens {
@@ -302,16 +284,7 @@ func TestInvalid(t *testing.T) {
 
 			scanner := scanner.New(name, []byte(src), collector.handler())
 
-			var tokens []token.Token
-
-			for {
-				tok := scanner.Scan()
-
-				tokens = append(tokens, tok)
-				if tok.Is(token.EOF, token.Error) {
-					break
-				}
-			}
+			tokens := slices.Collect(scanner.All())
 
 			var formattedTokens strings.Builder
 			for _, tok := range tokens {
@@ -366,17 +339,9 @@ func FuzzScanner(f *testing.F) {
 		// utf-8 char
 		scanner := scanner.New("fuzz", []byte(src), nil)
 
-		for {
-			tok := scanner.Scan()
-
+		for tok := range scanner.All() {
 			// Property: End must be >= Start
 			test.True(t, tok.End >= tok.Start)
-
-			// Basically, it must always stop scanning. Either successfully (EOF)
-			// or unsuccessfully (Error)
-			if tok.Is(token.EOF, token.Error) {
-				break
-			}
 		}
 	})
 }
