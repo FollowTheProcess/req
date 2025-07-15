@@ -23,6 +23,7 @@ package scanner
 import (
 	"bytes"
 	"fmt"
+	"iter"
 	"slices"
 	"unicode"
 	"unicode/utf8"
@@ -50,7 +51,6 @@ type Scanner struct {
 	pos               int                 // Current scanner position in src (bytes, 0 indexed)
 	line              int                 // Current line number, 1 indexed
 	currentLineOffset int                 // Offset at which the current line started
-	width             int                 // Width of the last rune read from input, allows a single character backup
 }
 
 // New returns a new [Scanner] and kicks off the state machine in a goroutine.
@@ -75,6 +75,20 @@ func (s *Scanner) Scan() token.Token {
 	return <-s.tokens
 }
 
+// All returns an iterator over the tokens in the file, stopping at EOF or Error.
+//
+// The final token will still be yielded.
+func (s *Scanner) All() iter.Seq[token.Token] {
+	return func(yield func(token.Token) bool) {
+		for {
+			tok, ok := <-s.tokens
+			if !ok || !yield(tok) {
+				return
+			}
+		}
+	}
+}
+
 // next returns the next utf8 rune in the input, or [eof], and advances the scanner
 // over that rune such that successive calls to [Scanner.next] iterate through
 // src one rune at a time.
@@ -84,7 +98,6 @@ func (s *Scanner) next() rune {
 	}
 
 	char, width := utf8.DecodeRune(s.src[s.pos:])
-	s.width = width
 	s.pos += width
 
 	if char == '\n' {
