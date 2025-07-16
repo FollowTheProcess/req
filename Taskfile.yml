@@ -34,7 +34,7 @@ tasks:
     sources:
       - "**/*.go"
     cmds:
-      - go fmt ./...
+      - golangci-lint fmt
 
   test:
     desc: Run the test suite

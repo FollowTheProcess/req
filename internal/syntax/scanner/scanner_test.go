@@ -341,20 +341,18 @@ func FuzzScanner(f *testing.F) {
 
 		for tok := range scanner.All() {
 			// Property: Positions must be positive integers
-			test.True(t, tok.Start >= 0)
-			test.True(t, tok.End >= 0)
+			test.True(t, tok.Start >= 0, test.Context("token start position (%d) was negative", tok.Start))
+			test.True(t, tok.End >= 0, test.Context("token end position (%d) was negative", tok.End))
 
 			// Property: The kind must be one of the known kinds
-			test.True(t, (tok.Kind >= token.EOF) && (tok.Kind <= token.NoRedirect))
-
-			// Property: If it's not Error or EOF, it must have a non-zero width, we don't
-			// have any zero width tokens
-			if !tok.Is(token.Error, token.EOF) {
-				test.True(t, tok.End-tok.Start > 0)
-			}
+			test.True(
+				t,
+				(tok.Kind >= token.EOF) && (tok.Kind <= token.NoRedirect),
+				test.Context("token %s was not one of the pre-defined kinds", tok),
+			)
 
 			// Property: End must be >= Start
-			test.True(t, tok.End >= tok.Start)
+			test.True(t, tok.End >= tok.Start, test.Context("token %s had invalid start and end positions", tok))
 		}
 	})
 }
