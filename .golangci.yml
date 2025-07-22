@@ -168,3 +168,6 @@ linters:
 
         - name: unused-receiver
           disabled: true # As above
+
+        - name: enforce-switch-style
+          disabled: true # Exhaustive handles this
