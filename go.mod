@@ -1,6 +1,10 @@
 module go.followtheprocess.codes/req
 
-go 1.24
+go 1.25
+
+ignore (
+	./docs
+)
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
