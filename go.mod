@@ -12,7 +12,7 @@ require (
 	go.followtheprocess.codes/log v1.0.0
 	go.followtheprocess.codes/msg v1.9.1
 	go.followtheprocess.codes/snapshot v0.6.0
-	go.followtheprocess.codes/test v0.22.0
+	go.followtheprocess.codes/test v0.23.0
 	go.followtheprocess.codes/txtar v0.8.0
 	go.uber.org/goleak v1.3.0
 )
